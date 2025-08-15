@@ -12,14 +12,65 @@
     "Programming Languages",
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:nodeeditor.openEditor",
+    "onCommand:nodeeditor.importScript",
+    "onCommand:nodeeditor.exportScript",
+    "onCommand:nodeeditor.openFromContext",
+    "onLanguage:shellscript"
+  ],
   "contributes": {
     "commands": [
       {
         "command": "nodeeditor.openEditor",
         "title": "NodeEditor: Open Visual Editor"
+      },
+      {
+        "command": "nodeeditor.importScript",
+        "title": "NodeEditor: Import Bash Script to Node Editor"
+      },
+      {
+        "command": "nodeeditor.exportScript",
+        "title": "NodeEditor: Export Nodes to Bash Script"
       }
     ],
+    "menus": {
+      "editor/context": [
+        {
+          "when": "resourceExtname == .sh || resourceExtname == .bash",
+          "command": "nodeeditor.openEditor",
+          "group": "navigation"
+        }
+      ],
+      "explorer/context": [
+        {
+          "when": "resourceExtname == .sh || resourceExtname == .bash",
+          "command": "nodeeditor.openEditor",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "NodeEditor",
+      "properties": {
+        "nodeeditor.autoSync": {
+          "type": "boolean",
+          "default": true,
+          "description": "スクリプトとノードビューを自動的に同期"
+        },
+        "nodeeditor.syncDelay": {
+          "type": "number",
+          "default": 500,
+          "description": "変更を同期するまでの遅延（ミリ秒）"
+        },
+        "nodeeditor.theme": {
+          "type": "string",
+          "enum": ["light", "dark", "auto"],
+          "default": "auto",
+          "description": "ノードエディタのカラーテーマ"
+        }
+      }
+    },
     "languages": [
       {
         "id": "shellscript",
