@@ -1,18 +1,32 @@
 #!/bin/bash
+# NodeEditor動作確認用スクリプト
 
-# テスト用のBashスクリプト
-echo "Hello, World!"
+echo "NodeEditor Test Script"
+echo "======================"
 
 # 変数定義
 NAME="NodeEditor"
 VERSION="0.0.1"
 
 # 条件分岐
-if [ -n "$NAME" ]; then
-    echo "Project: $NAME"
+if [ -z "$NAME" ]; then
+    echo "名前が設定されていません"
+else
+    echo "プロジェクト: $NAME"
+    echo "バージョン: $VERSION"
 fi
 
-# ループ
+# ループ処理
 for i in 1 2 3; do
-    echo "Count: $i"
+    echo "カウント: $i"
 done
+
+# パイプ処理
+ls -la | grep "\.json" | head -5
+
+# 関数定義
+function greeting() {
+    echo "Hello from $1!"
+}
+
+greeting "NodeEditor"
