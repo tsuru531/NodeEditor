@@ -103,7 +103,7 @@ MIT License
 
 ## 作者
 
-[Your Name]
+tsuru531
 
 ## 謝辞
 

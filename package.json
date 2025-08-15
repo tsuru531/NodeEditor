@@ -1,0 +1,80 @@
+{
+  "name": "nodeeditor",
+  "displayName": "NodeEditor - Bash Visual Script Editor",
+  "version": "0.0.1",
+  "description": "Bashスクリプトをビジュアルノードエディタで編集できるVSCode拡張機能",
+  "publisher": "nodeeditor",
+  "main": "./out/extension/extension.js",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "nodeeditor.openEditor",
+        "title": "NodeEditor: Open Visual Editor"
+      }
+    ],
+    "languages": [
+      {
+        "id": "shellscript",
+        "aliases": [
+          "Shell Script",
+          "sh",
+          "bash"
+        ],
+        "extensions": [
+          ".sh",
+          ".bash"
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "compile-tsc": "tsc -p ./",
+    "watch-tsc": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "test": "vscode-test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tsuru531/NodeEditor.git"
+  },
+  "keywords": [
+    "bash",
+    "shell",
+    "script",
+    "visual",
+    "node",
+    "editor"
+  ],
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tsuru531/NodeEditor/issues"
+  },
+  "homepage": "https://github.com/tsuru531/NodeEditor#readme",
+  "devDependencies": {
+    "@types/node": "^24.2.1",
+    "@types/vscode": "^1.102.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.1",
+    "@typescript-eslint/parser": "^8.39.1",
+    "eslint": "^9.33.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.6.2",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.9.2",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  }
+}
