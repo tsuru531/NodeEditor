@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { NodeEditorPanel } from './NodeEditorPanel';
 
 /**
  * 拡張機能がアクティベートされたときに呼ばれる
@@ -44,14 +45,13 @@ export function activate(context: vscode.ExtensionContext) {
                 const document = await vscode.workspace.openTextDocument(uri);
                 const scriptContent = document.getText();
 
-                // NodeEditorパネルを作成（今後実装）
+                // NodeEditorパネルを作成
                 vscode.window.showInformationMessage(
                     `NodeEditorで開きます: ${uri.fsPath}\nスクリプトサイズ: ${scriptContent.length}文字`
                 );
 
-                // TODO: Phase 3で NodeEditorPanelクラスを実装
-                // const { NodeEditorPanel } = await import('./NodeEditorPanel');
-                // NodeEditorPanel.createOrShow(context.extensionUri, document);
+                // NodeEditorPanelを表示
+                NodeEditorPanel.createOrShow(context.extensionUri, document);
 
             } catch (error) {
                 vscode.window.showErrorMessage(
@@ -212,15 +212,14 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('NodeEditor初期設定:', initialConfig);
 
     // WebViewパネルのシリアライザー（状態復元用）
-    // TODO: Phase 3でNodeEditorPanelを実装後に有効化
-    // if (vscode.window.registerWebviewPanelSerializer) {
-    //     vscode.window.registerWebviewPanelSerializer(NodeEditorPanel.viewType, {
-    //         async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-    //             console.log(`WebViewパネルの状態を復元: ${JSON.stringify(state)}`);
-    //             NodeEditorPanel.revive(webviewPanel, context.extensionUri, state);
-    //         }
-    //     });
-    // }
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer(NodeEditorPanel.viewType, {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+                console.log(`WebViewパネルの状態を復元: ${JSON.stringify(state)}`);
+                NodeEditorPanel.revive(webviewPanel, context.extensionUri);
+            }
+        });
+    }
 }
 
 /**

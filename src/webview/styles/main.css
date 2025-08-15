@@ -1,0 +1,137 @@
+/* VSCodeテーマ変数を利用したスタイル定義 */
+:root {
+  --node-bg: var(--vscode-editor-background);
+  --node-border: var(--vscode-panel-border);
+  --node-text: var(--vscode-editor-foreground);
+  --edge-color: var(--vscode-textLink-foreground);
+  --selected-border: var(--vscode-focusBorder);
+  --handle-bg: var(--vscode-button-background);
+}
+
+/* React Flowのコンテナ */
+.react-flow__container {
+  background: var(--vscode-editor-background);
+}
+
+/* ノードのスタイル */
+.react-flow__node {
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 4px;
+  color: var(--node-text);
+  padding: 10px;
+  font-size: 12px;
+  font-family: var(--vscode-font-family);
+}
+
+.react-flow__node.selected {
+  border-color: var(--selected-border);
+  box-shadow: 0 0 0 2px var(--selected-border);
+}
+
+.react-flow__node-input {
+  background: var(--vscode-inputValidation-infoBackground);
+  border-color: var(--vscode-inputValidation-infoBorder);
+}
+
+.react-flow__node-output {
+  background: var(--vscode-inputValidation-warningBackground);
+  border-color: var(--vscode-inputValidation-warningBorder);
+}
+
+/* エッジのスタイル */
+.react-flow__edge-path {
+  stroke: var(--edge-color);
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: var(--selected-border);
+  stroke-width: 3;
+}
+
+/* ハンドル（接続ポイント）のスタイル */
+.react-flow__handle {
+  background: var(--handle-bg);
+  border: 2px solid var(--node-bg);
+  width: 8px;
+  height: 8px;
+}
+
+.react-flow__handle-connecting {
+  background: var(--vscode-terminal-ansiGreen);
+}
+
+.react-flow__handle-valid {
+  background: var(--vscode-terminal-ansiGreen);
+}
+
+/* コントロールのスタイル */
+.react-flow__controls {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.react-flow__controls-button {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: none;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground);
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor;
+}
+
+/* ミニマップのスタイル */
+.react-flow__minimap {
+  background: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+}
+
+.react-flow__minimap-mask {
+  fill: var(--vscode-editor-selectionBackground);
+  fill-opacity: 0.2;
+}
+
+/* 背景のスタイル */
+.react-flow__background {
+  background: var(--vscode-editor-background);
+}
+
+.react-flow__background-pattern {
+  stroke: var(--vscode-panel-border);
+  stroke-opacity: 0.3;
+}
+
+/* ボタンのスタイル */
+button {
+  font-family: var(--vscode-font-family);
+  font-size: 13px;
+  padding: 8px 16px;
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+button:active {
+  transform: translateY(1px);
+}
+
+/* アトリビューションを非表示 */
+.react-flow__attribution {
+  display: none;
+}

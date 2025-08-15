@@ -25,7 +25,8 @@ module.exports = [
                     use: {
                         loader: 'ts-loader',
                         options: {
-                            configFile: 'tsconfig.json'
+                            configFile: 'tsconfig.json',
+                            onlyCompileBundledFiles: true
                         }
                     }
                 }
@@ -37,13 +38,16 @@ module.exports = [
     {
         target: 'web',
         mode: 'development',
-        entry: './src/webview/index.ts',
+        entry: './src/webview/index.tsx',
         output: {
             path: path.resolve(__dirname, 'out', 'webview'),
             filename: 'index.js'
         },
         resolve: {
-            extensions: ['.ts', '.tsx', '.js', '.jsx']
+            extensions: ['.ts', '.tsx', '.js', '.jsx'],
+            alias: {
+                '@': path.resolve(__dirname, 'src/webview')
+            }
         },
         module: {
             rules: [
@@ -53,9 +57,14 @@ module.exports = [
                     use: {
                         loader: 'ts-loader',
                         options: {
-                            configFile: 'tsconfig.webview.json'
+                            configFile: 'tsconfig.webview.json',
+                            onlyCompileBundledFiles: true
                         }
                     }
+                },
+                {
+                    test: /\.css$/,
+                    use: ['style-loader', 'css-loader']
                 }
             ]
         },
