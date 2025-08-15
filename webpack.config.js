@@ -37,13 +37,13 @@ module.exports = [
     {
         target: 'web',
         mode: 'development',
-        entry: './src/webview/index.ts',
+        entry: './src/webview/App.tsx',
         output: {
             path: path.resolve(__dirname, 'out', 'webview'),
             filename: 'index.js'
         },
         resolve: {
-            extensions: ['.ts', '.tsx', '.js', '.jsx']
+            extensions: ['.ts', '.tsx', '.js', '.jsx', '.css']
         },
         module: {
             rules: [
@@ -53,9 +53,14 @@ module.exports = [
                     use: {
                         loader: 'ts-loader',
                         options: {
-                            configFile: 'tsconfig.webview.json'
+                            configFile: 'tsconfig.webview.json',
+                            transpileOnly: true
                         }
                     }
+                },
+                {
+                    test: /\.css$/,
+                    use: ['style-loader', 'css-loader']
                 }
             ]
         },

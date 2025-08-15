@@ -1,0 +1,183 @@
+.custom-node {
+  background: var(--vscode-editor-background);
+  border: 2px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  padding: 0;
+  min-width: 200px;
+  font-size: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.command-node { border-color: #4CAF50; }
+.pipe-node { border-color: #2196F3; }
+.condition-node { border-color: #FF9800; }
+.loop-node { border-color: #9C27B0; }
+.variable-node { border-color: #00BCD4; }
+
+.node-header {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  background: var(--vscode-titleBar-activeBackground);
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid var(--vscode-panel-border);
+}
+
+.node-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.node-title {
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.node-content {
+  padding: 8px;
+}
+
+.node-input,
+.node-textarea,
+.node-select {
+  width: calc(100% - 12px);
+  box-sizing: border-box;
+  padding: 4px 6px;
+  margin: 4px 0;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  font-family: var(--vscode-editor-font-family);
+  font-size: 12px;
+}
+
+.node-input:focus,
+.node-textarea:focus,
+.node-select:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.node-textarea {
+  resize: vertical;
+  min-height: 40px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.custom-node.selected {
+  border-color: var(--vscode-focusBorder);
+  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
+}
+
+.condition-handles {
+  position: relative;
+}
+
+.handle-labels {
+  position: absolute;
+  bottom: -20px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  font-size: 10px;
+  pointer-events: none;
+}
+
+.handle-label-true {
+  color: #4CAF50;
+  margin-left: -15px;
+}
+
+.handle-label-false {
+  color: #f44336;
+  margin-right: -15px;
+}
+
+.react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--vscode-button-background);
+  border: 2px solid var(--vscode-panel-border);
+}
+
+.react-flow__handle.react-flow__handle-connecting {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.react-flow__handle.react-flow__handle-valid {
+  background: #4CAF50;
+}
+
+.literal-node {
+  min-width: 150px;
+  max-width: 200px;
+}
+
+.string-node { border-color: #6BC46D; }
+.number-node { border-color: #64B5F6; }
+.array-node { border-color: #BA68C8; }
+.output-node { border-color: #FFB74D; }
+
+.output-display {
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 4px;
+  padding: 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  min-height: 50px;
+  max-height: 150px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.arg-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+  gap: 8px;
+}
+
+.arg-counter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.arg-counter button {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--vscode-button-border);
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arg-counter button:hover {
+  background: var(--vscode-button-hoverBackground);
+}
+
+.arg-counter span {
+  font-size: 11px;
+  color: var(--vscode-foreground);
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.checkbox-label input[type="checkbox"] {
+  margin: 0;
+}

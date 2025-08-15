@@ -1,0 +1,118 @@
+.editor-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  background: var(--vscode-editor-background);
+}
+
+.sidebar-left {
+  width: 200px;
+  background: var(--vscode-sideBar-background);
+  border-right: 1px solid var(--vscode-panel-border);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.editor-main {
+  flex: 1;
+  position: relative;
+}
+
+.sidebar-right {
+  width: 250px;
+  background: var(--vscode-sideBar-background);
+  border-left: 1px solid var(--vscode-panel-border);
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.node-panel h3,
+.properties-panel h3 {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--vscode-foreground);
+}
+
+.node-item {
+  display: flex;
+  align-items: center;
+  padding: 8px;
+  margin: 4px 0;
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  cursor: move;
+  transition: background 0.2s;
+}
+
+.node-item:hover {
+  background: var(--vscode-list-hoverBackground);
+}
+
+.node-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.node-label {
+  font-size: 13px;
+  color: var(--vscode-foreground);
+}
+
+.properties-empty {
+  color: var(--vscode-descriptionForeground);
+  font-style: italic;
+  font-size: 13px;
+  text-align: center;
+  margin-top: 20px;
+}
+
+.properties-content {
+  font-size: 13px;
+}
+
+.property-group {
+  margin-bottom: 12px;
+}
+
+.property-group label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--vscode-foreground);
+  font-weight: 500;
+}
+
+.property-group input {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 2px;
+  font-size: 13px;
+}
+
+.property-group input[readonly] {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.position-inputs {
+  display: flex;
+  gap: 8px;
+}
+
+.position-inputs input {
+  flex: 1;
+}
+
+.property-group pre {
+  background: var(--vscode-textCodeBlock-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 2px;
+  padding: 8px;
+  margin: 4px 0 0 0;
+  font-size: 12px;
+  overflow-x: auto;
+}

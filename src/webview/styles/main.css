@@ -1,0 +1,43 @@
+:root {
+  --node-bg: var(--vscode-editor-background);
+  --node-border: var(--vscode-panel-border);
+  --node-text: var(--vscode-editor-foreground);
+  --edge-color: var(--vscode-textLink-foreground);
+  --selected-border: var(--vscode-focusBorder);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--vscode-editor-background);
+  color: var(--vscode-editor-foreground);
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.react-flow__node {
+  background: var(--node-bg);
+  border: 1px solid var(--node-border);
+  border-radius: 4px;
+  color: var(--node-text);
+  padding: 10px;
+}
+
+.react-flow__node.selected {
+  border-color: var(--selected-border);
+  box-shadow: 0 0 0 1px var(--selected-border);
+}
+
+.react-flow__edge-path {
+  stroke: var(--edge-color);
+}
+
+.react-flow__handle {
+  background: var(--edge-color);
+  border: 2px solid var(--node-bg);
+}

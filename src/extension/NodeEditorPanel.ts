@@ -124,7 +124,6 @@ export class NodeEditorPanel {
 
     private _getHtmlForWebview(webview: vscode.Webview) {
         const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'out', 'webview', 'index.js'));
-        const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'style.css'));
 
         const nonce = getNonce();
 
@@ -132,16 +131,21 @@ export class NodeEditorPanel {
             <html lang="ja">
             <head>
                 <meta charset="UTF-8">
-                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}';">
+                <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; img-src ${webview.cspSource} data:; font-src ${webview.cspSource};">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <link href="${styleUri}" rel="stylesheet">
                 <title>Node Editor</title>
             </head>
-            <body>
+            <body class="vscode-dark">
                 <div id="root"></div>
                 <script nonce="${nonce}">
                     const vscode = acquireVsCodeApi();
                     window.vscode = vscode;
+                    
+                    // VSCodeテーマクラスを設定
+                    const theme = document.body.classList.contains('vscode-light') ? 'light' : 'dark';
+                    if (theme === 'dark' && !document.body.classList.contains('vscode-dark')) {
+                        document.body.classList.add('vscode-dark');
+                    }
                 </script>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
