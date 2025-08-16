@@ -12,37 +12,62 @@ export function activate(context: vscode.ExtensionContext) {
         'nodecanvas.openCanvas',
         async (uri?: vscode.Uri) => {
             try {
-                // URIが指定されていない場合は、現在のアクティブエディタから取得
+                // URIが指定されていない場合の処理
                 if (!uri) {
                     const activeEditor = vscode.window.activeTextEditor;
-                    if (activeEditor && 
-                        (activeEditor.document.languageId === 'shellscript' || 
-                         activeEditor.document.fileName.endsWith('.sh') ||
-                         activeEditor.document.fileName.endsWith('.bash'))) {
+                    if (activeEditor) {
+                        // 現在開いているファイルがあればそれを使用（ファイルタイプ制限なし）
                         uri = activeEditor.document.uri;
                     } else {
-                        // ファイル選択ダイアログを表示
-                        const fileUris = await vscode.window.showOpenDialog({
-                            canSelectFiles: true,
-                            canSelectFolders: false,
-                            canSelectMany: false,
-                            filters: {
-                                'Bash Scripts': ['sh', 'bash'],
-                                'All Files': ['*']
+                        // アクティブエディタがない場合の選択肢を提示
+                        const choice = await vscode.window.showQuickPick([
+                            {
+                                label: '$(file) 既存ファイルを開く',
+                                description: 'ファイルを選択してNodeCanvasで開く',
+                                action: 'openFile'
                             },
-                            openLabel: 'NodeCanvasで開く'
+                            {
+                                label: '$(add) 新規キャンバス',
+                                description: 'ファイルなしで新規キャンバスを作成',
+                                action: 'newCanvas'
+                            }
+                        ], {
+                            placeHolder: 'NodeCanvasの開き方を選択してください'
                         });
 
-                        if (!fileUris || fileUris.length === 0) {
+                        if (!choice) {
                             return;
                         }
-                        uri = fileUris[0];
+
+                        if (choice.action === 'openFile') {
+                            // ファイル選択ダイアログを表示
+                            const fileUris = await vscode.window.showOpenDialog({
+                                canSelectFiles: true,
+                                canSelectFolders: false,
+                                canSelectMany: false,
+                                filters: {
+                                    'All Files': ['*'],
+                                    'Text Files': ['txt', 'md', 'json', 'yaml', 'yml'],
+                                    'Script Files': ['sh', 'bash', 'py', 'js', 'ts'],
+                                    'Config Files': ['conf', 'config', 'ini', 'env']
+                                },
+                                openLabel: 'NodeCanvasで開く'
+                            });
+
+                            if (!fileUris || fileUris.length === 0) {
+                                return;
+                            }
+                            uri = fileUris[0];
+                        }
+                        // choice.action === 'newCanvas' の場合はuriをnullのままにして新規キャンバス
                     }
                 }
 
-                // ファイルの内容を読み込む
-                const document = await vscode.workspace.openTextDocument(uri);
-                const scriptContent = document.getText();
+                // ファイルの内容を読み込む（uriがある場合のみ）
+                let document: vscode.TextDocument | undefined;
+                if (uri) {
+                    document = await vscode.workspace.openTextDocument(uri);
+                }
 
                 // NodeCanvasパネルを作成
                 const { NodeCanvasPanel } = await import('./NodeCanvasPanel');
@@ -154,25 +179,11 @@ export function activate(context: vscode.ExtensionContext) {
         100
     );
     statusBarItem.text = '$(symbol-structure) NodeCanvas';
-    statusBarItem.tooltip = '現在のBashスクリプトをNodeCanvasで開く';
+    statusBarItem.tooltip = 'NodeCanvasビジュアルエディタを開く';
     statusBarItem.command = 'nodecanvas.openCanvas';
-
-    // Bashファイルが開かれているときのみステータスバーを表示
-    const updateStatusBar = () => {
-        const activeEditor = vscode.window.activeTextEditor;
-        if (activeEditor && 
-            (activeEditor.document.languageId === 'shellscript' ||
-             activeEditor.document.fileName.endsWith('.sh') ||
-             activeEditor.document.fileName.endsWith('.bash'))) {
-            statusBarItem.show();
-        } else {
-            statusBarItem.hide();
-        }
-    };
-
-    // エディタ変更時にステータスバーを更新
-    vscode.window.onDidChangeActiveTextEditor(updateStatusBar, null, context.subscriptions);
-    updateStatusBar();
+    
+    // 常時ステータスバーを表示
+    statusBarItem.show();
 
     // コマンドとUIアイテムを登録
     context.subscriptions.push(

@@ -16,6 +16,8 @@ interface MemoNodeProps {
 export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
   const [content, setContent] = useState(data.content || '');
   const [isEditing, setIsEditing] = useState(data.isEditing || false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [nodeSize, setNodeSize] = useState({ width: 200, height: 120 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -56,24 +58,41 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
     }
   }, []);
 
+  const toggleCollapse = useCallback(() => {
+    setIsCollapsed(!isCollapsed);
+  }, [isCollapsed]);
+
+  const onResize = useCallback((event: any, data: { width: number; height: number }) => {
+    setNodeSize({ width: data.width, height: data.height });
+  }, []);
+
+  const onResizeEnd = useCallback((event: any, data: { width: number; height: number }) => {
+    setNodeSize({ width: data.width, height: data.height });
+  }, []);
+
   return (
     <div 
       className={`memo-node ${selected ? 'selected' : ''} ${isEditing ? 'nodrag' : ''}`}
       style={{
-        width: '200px',
-        height: '120px',
+        width: isCollapsed ? `${nodeSize.width}px` : `${nodeSize.width}px`,
+        height: isCollapsed ? '40px' : `${nodeSize.height}px`,
+        minWidth: '120px',
+        minHeight: isCollapsed ? '40px' : '80px',
         background: 'var(--node-background)',
         border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--node-border)'}`,
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+        position: 'relative',
       }}
-      onDoubleClick={handleDoubleClick}
+      onDoubleClick={!isCollapsed ? handleDoubleClick : undefined}
     >
       <NodeResizer
         color="transparent"
-        isVisible={selected}
+        isVisible={selected && !isCollapsed}
         minWidth={120}
         minHeight={80}
+        onResize={onResize}
+        onResizeEnd={onResizeEnd}
         handleStyle={{
           opacity: 0,
           pointerEvents: 'auto',
@@ -88,34 +107,50 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
         style={{
           padding: '6px 12px',
           background: 'var(--node-header-background)',
-          borderBottom: '1px solid var(--node-border)',
-          borderRadius: '6px 6px 0 0',
+          borderBottom: isCollapsed ? 'none' : '1px solid var(--node-border)',
+          borderRadius: isCollapsed ? '6px' : '6px 6px 0 0',
           display: 'flex',
           justifyContent: 'flex-start',
           alignItems: 'center',
         }}
       >
-        <span style={{ 
-          fontSize: '11px', 
-          fontWeight: 'bold',
-          color: 'var(--text-color)',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}>
-          📝 txt
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: 1 }}>
+          <span style={{ 
+            fontSize: '11px', 
+            fontWeight: 'bold',
+            color: 'var(--text-color)',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}>
+            📝 txt
+          </span>
+          <span
+            onClick={toggleCollapse}
+            style={{
+              fontSize: '12px',
+              color: 'var(--text-color)',
+              cursor: 'pointer',
+              userSelect: 'none',
+              padding: '2px',
+            }}
+          >
+            {isCollapsed ? '▶' : '▼'}
+          </span>
+        </div>
       </div>
 
       {/* コンテンツ */}
-      <div 
-        className="memo-content"
-        style={{
-          padding: '12px',
-          height: 'calc(100% - 40px)', // ヘッダー分を引く
-          overflow: 'hidden',
-        }}
-      >
+      {!isCollapsed && (
+        <div 
+          className="memo-content"
+          style={{
+            padding: '12px',
+            height: `${nodeSize.height - 40}px`, // ヘッダー分を引く
+            overflow: 'hidden',
+            boxSizing: 'border-box',
+          }}
+        >
         {isEditing ? (
           <textarea
             ref={textareaRef}
@@ -157,7 +192,8 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
             {content}
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* ハンドル */}
       <Handle

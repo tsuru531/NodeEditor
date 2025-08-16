@@ -1,5 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useContext } from 'react';
 import { Handle, Position } from 'reactflow';
+import { NodeExecutionContext } from '../components/NodeEditor';
 
 interface FunctionNodeData {
   functionName: string;
@@ -29,7 +30,7 @@ const getLanguageIcon = (language: string): string => {
 export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }) => {
   const [functionName, setFunctionName] = useState(data.functionName || 'my_function');
   const [parameters, setParameters] = useState<string[]>(data.parameters || ['param1']);
-  const [functionBody, setFunctionBody] = useState(data.functionBody || 'echo "Hello $param1"');
+  const [functionBody, setFunctionBody] = useState(data.functionBody || 'echo "Hello $1"');
   const [language, setLanguage] = useState(data.language || 'bash');
   const [isEditing, setIsEditing] = useState(data.isEditing || false);
   const [executionResult, setExecutionResult] = useState(data.executionResult || '');
@@ -37,6 +38,7 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
   const [isCollapsed, setIsCollapsed] = useState(false);
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const executionContext = useContext(NodeExecutionContext);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -90,26 +92,33 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
   }, [functionName, parameters, functionBody]);
 
   const executeFunction = useCallback(async () => {
+    console.log('executeFunction called, executionContext:', executionContext);
+    console.log('Node ID:', id);
+    
+    if (!executionContext) {
+      console.error('Execution context not available');
+      return;
+    }
+
     setIsExecuting(true);
     setExecutionResult('');
 
-    // VSCodeのbash実行API呼び出し（実装時）
-    if (typeof window !== 'undefined' && (window as any).vscode) {
-      (window as any).vscode.postMessage({
-        command: 'executeBashFunction',
-        nodeId: id,
-        functionCode: generateFunctionCode(),
-        functionName: functionName,
-        parameters: parameters,
-      });
-    } else {
-      // 開発時のモック
-      setTimeout(() => {
-        setExecutionResult(`実行結果（モック）:\nfunction ${functionName} executed successfully`);
-        setIsExecuting(false);
-      }, 1000);
+    try {
+      // NodeExecutionContextを使用してノードを実行
+      console.log('Calling executionContext.executeNode with ID:', id);
+      const result = await executionContext.executeNode(id);
+      console.log('Execution result:', result);
+      setExecutionResult(result.stdout);
+      if (result.stderr) {
+        setExecutionResult(prev => prev + '\nError: ' + result.stderr);
+      }
+    } catch (error) {
+      console.error('Execution error:', error);
+      setExecutionResult(`実行エラー: ${error}`);
+    } finally {
+      setIsExecuting(false);
     }
-  }, [id, generateFunctionCode, functionName, parameters]);
+  }, [id, executionContext]);
 
   const toggleCollapse = useCallback(() => {
     setIsCollapsed(!isCollapsed);
@@ -163,7 +172,10 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
         </div>
         <div style={{ display: 'flex', gap: '4px' }}>
           <button
-            onClick={executeFunction}
+            onClick={() => {
+              console.log('Execute button clicked');
+              executeFunction();
+            }}
             disabled={isExecuting}
             style={{
               padding: '2px 6px',

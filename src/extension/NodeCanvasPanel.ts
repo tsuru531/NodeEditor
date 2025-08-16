@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
+import { spawn } from 'child_process';
 
 export class NodeCanvasPanel {
     public static currentPanel: NodeCanvasPanel | undefined;
@@ -24,9 +25,14 @@ export class NodeCanvasPanel {
             return;
         }
 
+        // パネルタイトルを動的に決定
+        const panelTitle = document ? 
+            `NodeCanvas - ${path.basename(document.uri.fsPath)}` : 
+            'NodeCanvas - 新規キャンバス';
+
         const panel = vscode.window.createWebviewPanel(
             NodeCanvasPanel.viewType,
-            'Node Canvas',
+            panelTitle,
             column || vscode.ViewColumn.Two,
             {
                 enableScripts: true,
@@ -69,6 +75,9 @@ export class NodeCanvasPanel {
                             this._updateDocument(message.script);
                         }
                         return;
+                    case 'executeBashFunction':
+                        this._executeBashFunction(message);
+                        return;
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
                         return;
@@ -105,8 +114,8 @@ export class NodeCanvasPanel {
     private _update() {
         const webview = this._panel.webview;
         this._panel.title = this._document 
-            ? `Node Canvas: ${path.basename(this._document.fileName)}`
-            : 'Node Canvas';
+            ? `NodeCanvas - ${path.basename(this._document.fileName)}`
+            : 'NodeCanvas - 新規キャンバス';
         this._panel.webview.html = this._getHtmlForWebview(webview);
         this._sendScriptToWebview();
     }
@@ -141,6 +150,83 @@ export class NodeCanvasPanel {
     private async _loadCanvas() {
         // TODO: Canvas Phase 5でキャンバスプロジェクト読み込み機能を実装
         vscode.window.showInformationMessage('キャンバスデータを読み込みました（将来実装）');
+    }
+
+    private async _executeBashFunction(message: any) {
+        try {
+            const { functionBody, arguments: args, nodeId } = message;
+            
+            // bashコマンドを構築
+            let bashCommand = functionBody;
+            
+            // 引数を順番に置換 ($1, $2, ...)
+            if (args && Array.isArray(args)) {
+                args.forEach((arg: string, index: number) => {
+                    const placeholder = `$${index + 1}`;
+                    bashCommand = bashCommand.replace(new RegExp(`\\${placeholder}\\b`, 'g'), arg);
+                });
+            }
+            
+            // bashプロセスを実行
+            const bashProcess = spawn('bash', ['-c', bashCommand], {
+                cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
+                env: process.env
+            });
+            
+            let stdout = '';
+            let stderr = '';
+            
+            bashProcess.stdout.on('data', (data) => {
+                stdout += data.toString();
+            });
+            
+            bashProcess.stderr.on('data', (data) => {
+                stderr += data.toString();
+            });
+            
+            bashProcess.on('close', (code) => {
+                // WebViewに結果を送信
+                this._panel.webview.postMessage({
+                    command: 'bashExecutionResult',
+                    success: true,
+                    stdout: stdout.trim(),
+                    stderr: stderr.trim(),
+                    exitCode: code || 0,
+                    nodeId
+                });
+            });
+            
+            bashProcess.on('error', (error) => {
+                // エラーをWebViewに送信
+                this._panel.webview.postMessage({
+                    command: 'bashExecutionResult',
+                    success: false,
+                    error: error.message,
+                    nodeId
+                });
+            });
+            
+            // 10秒でタイムアウト
+            setTimeout(() => {
+                if (!bashProcess.killed) {
+                    bashProcess.kill('SIGTERM');
+                    this._panel.webview.postMessage({
+                        command: 'bashExecutionResult',
+                        success: false,
+                        error: 'Execution timeout (10s)',
+                        nodeId
+                    });
+                }
+            }, 10000);
+            
+        } catch (error) {
+            // エラーをWebViewに送信
+            this._panel.webview.postMessage({
+                command: 'bashExecutionResult',
+                success: false,
+                error: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {

@@ -49,6 +49,13 @@ export class StateManager {
   }
 
   /**
+   * 実行コンテキストを取得
+   */
+  public getContext(): ExecutionContext {
+    return this.context;
+  }
+
+  /**
    * 状態変更リスナーを追加
    */
   public addListener(listener: StateChangeListener): void {
