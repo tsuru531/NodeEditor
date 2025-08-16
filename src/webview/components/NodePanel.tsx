@@ -1,15 +1,11 @@
 import React from 'react';
 
 const nodeTypes = [
-  { type: 'string', label: 'String', icon: '📝', description: 'String literal value' },
-  { type: 'number', label: 'Number', icon: '🔢', description: 'Number literal value' },
-  { type: 'array', label: 'Array', icon: '📚', description: 'Array of values' },
-  { type: 'command', label: 'Command', icon: '⚡', description: 'Execute a shell command' },
-  { type: 'pipe', label: 'Pipe', icon: '🔀', description: 'Pipe output between commands' },
-  { type: 'condition', label: 'If/Then', icon: '❓', description: 'Conditional branching' },
-  { type: 'loop', label: 'Loop', icon: '🔄', description: 'Loop through items' },
-  { type: 'variable', label: 'Variable', icon: '📦', description: 'Define or use variables' },
-  { type: 'output', label: 'Output', icon: '📤', description: 'Display output' },
+  // Canvasノードタイプ
+  { type: 'memo', label: 'メモ', icon: '📝', description: 'Markdownテキストメモ', category: 'canvas' },
+  { type: 'file', label: 'ファイル', icon: '📁', description: 'ローカルファイル参照', category: 'canvas' },
+  { type: 'function', label: '関数', icon: '🔧', description: '関数定義・実行', category: 'canvas' },
+  { type: 'connector', label: 'コネクタ', icon: '🔗', description: 'データフロー制御', category: 'canvas' },
 ];
 
 export const NodePanel: React.FC = () => {
@@ -18,11 +14,21 @@ export const NodePanel: React.FC = () => {
     event.dataTransfer.effectAllowed = 'move';
   };
 
-  return (
-    <div className="node-panel">
-      <h3>Node Types</h3>
+  const canvasNodes = nodeTypes.filter(node => node.category === 'canvas');
+
+  const renderNodeGroup = (title: string, nodes: typeof nodeTypes) => (
+    <div className="node-group" style={{ marginBottom: '20px' }}>
+      <h4 style={{ 
+        fontSize: '12px', 
+        color: 'var(--text-muted)', 
+        marginBottom: '8px',
+        borderBottom: '1px solid var(--border-color)',
+        paddingBottom: '4px'
+      }}>
+        {title}
+      </h4>
       <div className="node-list">
-        {nodeTypes.map((node) => (
+        {nodes.map((node) => (
           <div
             key={node.type}
             className="node-item"
@@ -35,6 +41,13 @@ export const NodePanel: React.FC = () => {
           </div>
         ))}
       </div>
+    </div>
+  );
+
+  return (
+    <div className="node-panel">
+      <h3>ノードタイプ</h3>
+      {renderNodeGroup('ノード', canvasNodes)}
     </div>
   );
 };

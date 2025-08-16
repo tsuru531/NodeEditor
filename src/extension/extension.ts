@@ -44,14 +44,9 @@ export function activate(context: vscode.ExtensionContext) {
                 const document = await vscode.workspace.openTextDocument(uri);
                 const scriptContent = document.getText();
 
-                // NodeCanvasパネルを作成（今後実装）
-                vscode.window.showInformationMessage(
-                    `NodeCanvasで開きます: ${uri.fsPath}\nスクリプトサイズ: ${scriptContent.length}文字`
-                );
-
-                // TODO: Canvas Phase 2で NodeCanvasPanelクラスを実装
-                // const { NodeCanvasPanel } = await import('./NodeCanvasPanel');
-                // NodeCanvasPanel.createOrShow(context.extensionUri, document);
+                // NodeCanvasパネルを作成
+                const { NodeCanvasPanel } = await import('./NodeCanvasPanel');
+                NodeCanvasPanel.createOrShow(context.extensionUri, document);
 
             } catch (error) {
                 vscode.window.showErrorMessage(
@@ -213,15 +208,15 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('NodeCanvas初期設定:', initialConfig);
 
     // WebViewパネルのシリアライザー（状態復元用）
-    // TODO: Canvas Phase 2でNodeCanvasPanelを実装後に有効化
-    // if (vscode.window.registerWebviewPanelSerializer) {
-    //     vscode.window.registerWebviewPanelSerializer(NodeCanvasPanel.viewType, {
-    //         async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
-    //             console.log(`WebViewパネルの状態を復元: ${JSON.stringify(state)}`);
-    //             NodeCanvasPanel.revive(webviewPanel, context.extensionUri, state);
-    //         }
-    //     });
-    // }
+    if (vscode.window.registerWebviewPanelSerializer) {
+        vscode.window.registerWebviewPanelSerializer('nodeCanvas', {
+            async deserializeWebviewPanel(webviewPanel: vscode.WebviewPanel, state: any) {
+                console.log(`WebViewパネルの状態を復元: ${JSON.stringify(state)}`);
+                const { NodeCanvasPanel } = await import('./NodeCanvasPanel');
+                NodeCanvasPanel.revive(webviewPanel, context.extensionUri);
+            }
+        });
+    }
 }
 
 /**

@@ -181,3 +181,77 @@
 .checkbox-label input[type="checkbox"] {
   margin: 0;
 }
+
+/* Canvas Phase 2 - 新ノードタイプのスタイル */
+.memo-node { border-color: #66BB6A; }
+.file-node { border-color: #42A5F5; }
+.bash-function-node { border-color: #FF7043; }
+.connector-node { border-color: #AB47BC; }
+
+/* CSS変数の定義 */
+:root {
+  --node-background: var(--vscode-editor-background);
+  --node-border: var(--vscode-panel-border);
+  --node-header-background: var(--vscode-titleBar-activeBackground);
+  --selection-color: var(--vscode-focusBorder);
+  --text-color: var(--vscode-foreground);
+  --text-muted: var(--vscode-descriptionForeground);
+  --handle-color: var(--vscode-button-background);
+  --handle-border: var(--vscode-panel-border);
+  --input-background: var(--vscode-input-background);
+  --input-border: var(--vscode-input-border);
+  --button-background: var(--vscode-button-background);
+  --button-border: var(--vscode-button-border);
+  --button-text: var(--vscode-button-foreground);
+  --button-active: var(--vscode-button-hoverBackground);
+  --button-disabled: var(--vscode-button-secondaryBackground);
+  --button-success: #4CAF50;
+  --button-danger: #f44336;
+  --code-background: var(--vscode-textCodeBlock-background);
+  --output-background: var(--vscode-editor-selectionBackground);
+  --border-color: var(--vscode-panel-border);
+}
+
+/* 新ノードの共通スタイル */
+.memo-node,
+.file-node,
+.bash-function-node,
+.connector-node {
+  font-family: var(--vscode-font-family);
+  line-height: 1.4;
+}
+
+.memo-node .memo-header,
+.file-node .file-header,
+.bash-function-node .bash-function-header,
+.connector-node .connector-header {
+  font-weight: 600;
+  user-select: none;
+}
+
+/* メモノード用スタイル */
+.memo-node textarea {
+  font-family: var(--vscode-editor-font-family);
+  line-height: 1.4;
+}
+
+/* ファイルノード用スタイル */
+.file-node input[type="text"] {
+  font-family: var(--vscode-editor-font-family);
+}
+
+/* Bash関数ノード用スタイル */
+.bash-function-node pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* コネクタノード用スタイル */
+.connector-node select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3cpolyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 16px;
+  padding-right: 32px;
+}

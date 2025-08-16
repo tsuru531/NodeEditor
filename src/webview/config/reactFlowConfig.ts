@@ -1,28 +1,20 @@
 import { NodeTypes, EdgeTypes } from 'reactflow';
 import { 
-  CommandNode, 
-  PipeNode, 
-  ConditionNode, 
-  LoopNode, 
-  VariableNode,
-  StringNode,
-  NumberNode,
-  ArrayNode,
-  OutputNode
+  // Canvasノードタイプ
+  MemoNode,
+  FileNode,
+  FunctionNode,
+  ConnectorNode
 } from '../nodeTypes';
 
 export const defaultViewport = { x: 0, y: 0, zoom: 1 };
 
 export const nodeTypes: NodeTypes = {
-  command: CommandNode,
-  pipe: PipeNode,
-  condition: ConditionNode,
-  loop: LoopNode,
-  variable: VariableNode,
-  string: StringNode,
-  number: NumberNode,
-  array: ArrayNode,
-  output: OutputNode,
+  // Canvasノードタイプ
+  memo: MemoNode,
+  file: FileNode,
+  function: FunctionNode,
+  connector: ConnectorNode,
 };
 
 export const edgeTypes: EdgeTypes = {

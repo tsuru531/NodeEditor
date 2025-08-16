@@ -9,7 +9,6 @@ import ReactFlow, {
   Node,
   ReactFlowInstance,
   Controls,
-  MiniMap,
   Background,
   BackgroundVariant,
 } from 'reactflow';
@@ -108,7 +107,6 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
         fitView
       >
         <Controls />
-        <MiniMap />
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
       </ReactFlow>
     </div>
