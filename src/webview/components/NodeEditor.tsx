@@ -83,13 +83,20 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
   // ノードの入力データを取得する関数
   const getNodeInputData = useCallback((nodeId: string): string[] => {
     const inputNodes = getConnectedNodes(nodeId, 'input');
+    console.log(`getNodeInputData for nodeId ${nodeId}:`, inputNodes);
     return inputNodes.map(node => {
+      console.log(`Processing input node:`, node);
       // MemoNodeの場合はcontentを、FunctionNodeの場合は最後の実行結果を返す
       if (node.type === 'memo') {
-        return node.data?.content || '';
+        const content = node.data?.content || '';
+        console.log(`Memo node content:`, content);
+        return content;
       } else if (node.type === 'function') {
-        return node.data?.executionResult || node.data?.lastOutput || '';
+        const result = node.data?.executionResult || node.data?.lastOutput || '';
+        console.log(`Function node result:`, result);
+        return result;
       }
+      console.log(`Unknown node type: ${node.type}`);
       return '';
     });
   }, [getConnectedNodes]);
@@ -118,7 +125,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
 
       try {
         // VSCode拡張機能にbash実行を依頼
-        const result = await executeBashFunction(node.data, inputData);
+        const result = await executeBashFunction({ ...node.data, nodeId }, inputData);
         
         // 実行結果をノードデータに保存
         updateNodeData(nodeId, {
@@ -131,8 +138,12 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
 
         // 接続先のノードに結果を伝播
         const outputNodes = getConnectedNodes(nodeId, 'output');
+        console.log(`Output nodes for ${nodeId}:`, outputNodes);
+        console.log(`Execution result stdout:`, result.stdout);
         outputNodes.forEach(outputNode => {
+          console.log(`Processing output node:`, outputNode);
           if (outputNode.type === 'memo') {
+            console.log(`Updating memo node ${outputNode.id} with content:`, result.stdout);
             updateNodeData(outputNode.id, { content: result.stdout });
           }
         });

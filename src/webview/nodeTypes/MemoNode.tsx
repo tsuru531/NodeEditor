@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Handle, Position, NodeResizer } from 'reactflow';
+import { Handle, Position, NodeResizer, useReactFlow } from 'reactflow';
 
 interface MemoNodeData {
   content: string;
@@ -19,6 +19,8 @@ export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selecte
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [nodeSize, setNodeSize] = useState({ width: 200, height: 120 });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { setNodes } = useReactFlow();
+  const isUpdatingRef = useRef(false);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -26,9 +28,32 @@ export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selecte
     }
   }, [isEditing]);
 
+  // 外部からdata.contentが変更された場合に同期（無限ループを防ぐ）
+  useEffect(() => {
+    if (data.content !== content && !isUpdatingRef.current) {
+      setContent(data.content || '');
+    }
+  }, [data.content, content]);
+
+  // contentが変更された時にReact Flowのノードデータを更新
+  const updateNodeData = useCallback((newContent: string) => {
+    isUpdatingRef.current = true;
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, content: newContent } } : node
+      )
+    );
+    // 短い遅延後にフラグをリセット
+    setTimeout(() => {
+      isUpdatingRef.current = false;
+    }, 10);
+  }, [id, setNodes]);
+
   const handleContentChange = useCallback((value: string) => {
     setContent(value);
-  }, []);
+    // ユーザーの入力の場合のみノードデータを更新
+    updateNodeData(value);
+  }, [updateNodeData]);
 
   const toggleEditMode = useCallback(() => {
     setIsEditing(!isEditing);
