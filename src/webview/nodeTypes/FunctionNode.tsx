@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect, useContext } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, useReactFlow } from 'reactflow';
 import { NodeExecutionContext } from '../components/NodeEditor';
 
 interface FunctionNodeData {
@@ -39,12 +39,45 @@ export const FunctionNode: React.FC<FunctionNodeProps> = React.memo(({ data, id,
   
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const executionContext = useContext(NodeExecutionContext);
+  const { setNodes } = useReactFlow();
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [isEditing]);
+
+  // React Flowのノードデータを更新する関数
+  const updateNodeData = useCallback((updates: Partial<FunctionNodeData>) => {
+    console.log('Updating node data:', updates);
+    setNodes((nds) =>
+      nds.map((node) =>
+        node.id === id ? { ...node, data: { ...node.data, ...updates } } : node
+      )
+    );
+  }, [id, setNodes]);
+
+  // functionBodyが変更された時にReact Flowのノードデータも更新
+  useEffect(() => {
+    if (functionBody !== data.functionBody) {
+      console.log('FunctionBody changed, updating node data:', functionBody);
+      updateNodeData({ functionBody });
+    }
+  }, [functionBody, data.functionBody, updateNodeData]);
+
+  // functionNameが変更された時にReact Flowのノードデータも更新
+  useEffect(() => {
+    if (functionName !== data.functionName) {
+      updateNodeData({ functionName });
+    }
+  }, [functionName, data.functionName, updateNodeData]);
+
+  // parametersが変更された時にReact Flowのノードデータも更新
+  useEffect(() => {
+    if (JSON.stringify(parameters) !== JSON.stringify(data.parameters)) {
+      updateNodeData({ parameters });
+    }
+  }, [parameters, data.parameters, updateNodeData]);
 
   // bash関数の本体から引数を自動解析
   const parseParametersFromBody = useCallback((body: string): string[] => {
@@ -94,6 +127,11 @@ export const FunctionNode: React.FC<FunctionNodeProps> = React.memo(({ data, id,
   const executeFunction = useCallback(async () => {
     console.log('executeFunction called, executionContext:', executionContext);
     console.log('Node ID:', id);
+    console.log('=== FUNCTION NODE DEBUG ===');
+    console.log('Current functionBody state:', functionBody);
+    console.log('Current data.functionBody:', data.functionBody);
+    console.log('Current parameters:', parameters);
+    console.log('Current data.parameters:', data.parameters);
     
     if (!executionContext) {
       console.error('Execution context not available');
@@ -302,29 +340,6 @@ export const FunctionNode: React.FC<FunctionNodeProps> = React.memo(({ data, id,
       )}
 
 
-      {/* 実行結果 */}
-      {executionResult && (
-        <div style={{ padding: '8px 12px', borderBottom: '1px solid var(--node-border)' }}>
-          <div style={{ fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
-            実行結果:
-          </div>
-          <pre style={{
-            fontSize: '10px',
-            fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", monospace',
-            color: 'var(--text-color)',
-            background: 'var(--output-background)',
-            padding: '6px',
-            borderRadius: '3px',
-            margin: 0,
-            overflow: 'auto',
-            maxHeight: '80px',
-            lineHeight: '1.3',
-            whiteSpace: 'pre-wrap',
-          }}>
-            {executionResult}
-          </pre>
-        </div>
-      )}
 
       {/* ハンドルフッターセクション */}
       <div style={{

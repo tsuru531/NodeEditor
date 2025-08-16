@@ -151,7 +151,7 @@ export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selecte
             alignItems: 'center',
             gap: '4px',
           }}>
-            <span style={{ fontSize: '12px' }}>📝</span> Memo
+            <span style={{ fontSize: '12px' }}>📝</span> txt
           </span>
           <span
             onClick={toggleCollapse}
@@ -227,6 +227,7 @@ export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selecte
       <Handle
         type="source"
         position={Position.Right}
+        id="output"
         style={{
           background: 'var(--handle-color)',
           border: '2px solid var(--handle-border)',
@@ -238,6 +239,7 @@ export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selecte
       <Handle
         type="target"
         position={Position.Left}
+        id="input"
         style={{
           background: 'var(--handle-color)',
           border: '2px solid var(--handle-border)',

@@ -33,6 +33,7 @@ interface NodeExecutionResult {
 interface NodeExecutionContext {
   executeNode: (nodeId: string) => Promise<NodeExecutionResult>;
   getConnectedNodes: (nodeId: string, direction: 'input' | 'output') => Node[];
+  getConnectedNodesByHandle: (nodeId: string, direction: 'input' | 'output', handleId?: string) => Array<{node: Node, edge: Edge}>;
   getNodeInputData: (nodeId: string) => string[];
   updateNodeData: (nodeId: string, data: any) => void;
 }
@@ -80,26 +81,101 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
     return nodes.filter(node => connectedNodeIds.includes(node.id));
   }, [edges, nodes]);
 
+  // 特定のハンドルから接続されたノードを取得する関数
+  const getConnectedNodesByHandle = useCallback((nodeId: string, direction: 'input' | 'output', handleId?: string): Array<{node: Node, edge: Edge}> => {
+    console.log(`getConnectedNodesByHandle called: nodeId=${nodeId}, direction=${direction}, handleId=${handleId}`);
+    
+    const relevantEdges = edges.filter(edge => {
+      console.log(`Checking edge:`, edge);
+      if (direction === 'input') {
+        const matches = edge.target === nodeId && (!handleId || edge.targetHandle === handleId);
+        console.log(`Input check: target=${edge.target}, targetHandle=${edge.targetHandle}, matches=${matches}`);
+        return matches;
+      } else {
+        const matches = edge.source === nodeId && (!handleId || edge.sourceHandle === handleId);
+        console.log(`Output check: source=${edge.source}, sourceHandle=${edge.sourceHandle}, matches=${matches}`);
+        return matches;
+      }
+    });
+    
+    console.log(`Relevant edges found:`, relevantEdges);
+    
+    const result = relevantEdges.map(edge => ({
+      node: nodes.find(node => node.id === (direction === 'input' ? edge.source : edge.target))!,
+      edge
+    })).filter(item => item.node);
+    
+    console.log(`getConnectedNodesByHandle result:`, result);
+    return result;
+  }, [edges, nodes]);
+
   // ノードの入力データを取得する関数
   const getNodeInputData = useCallback((nodeId: string): string[] => {
-    const inputNodes = getConnectedNodes(nodeId, 'input');
-    console.log(`getNodeInputData for nodeId ${nodeId}:`, inputNodes);
-    return inputNodes.map(node => {
-      console.log(`Processing input node:`, node);
-      // MemoNodeの場合はcontentを、FunctionNodeの場合は最後の実行結果を返す
+    const targetNode = nodes.find(n => n.id === nodeId);
+    if (!targetNode) {
+      console.log(`Target node ${nodeId} not found`);
+      return [];
+    }
+
+    // FunctionNodeの場合、各input-0, input-1, ... ハンドルの接続を順番に取得
+    if (targetNode.type === 'function') {
+      const parameters = targetNode.data?.parameters || ['param1'];
+      const inputData: string[] = [];
+      
+      for (let i = 0; i < parameters.length; i++) {
+        const inputHandleId = `input-${i}`;
+        const inputConnections = getConnectedNodesByHandle(nodeId, 'input', inputHandleId);
+        console.log(`getNodeInputData for ${nodeId}, handle ${inputHandleId}:`, inputConnections);
+        
+        if (inputConnections.length > 0) {
+          const { node, edge } = inputConnections[0]; // 最初の接続のみ使用
+          console.log(`Processing input node for ${inputHandleId}:`, node, 'edge:', edge);
+          console.log(`Edge sourceHandle: ${edge.sourceHandle}, targetHandle: ${edge.targetHandle}`);
+          
+          if (node.type === 'memo') {
+            const content = node.data?.content || '';
+            console.log(`Memo node content for ${inputHandleId}:`, content);
+            inputData[i] = content;
+          } else if (node.type === 'function') {
+            // sourceHandleに応じて適切な出力を取得
+            const sourceHandle = edge.sourceHandle || 'stdout';
+            let result = '';
+            if (sourceHandle === 'stdout') {
+              result = node.data?.lastOutput || '';
+            } else if (sourceHandle === 'stderr') {
+              result = node.data?.lastError || '';
+            } else if (sourceHandle === 'exitCode') {
+              result = (node.data?.lastExitCode || 0).toString();
+            }
+            console.log(`Function node result from ${sourceHandle} for ${inputHandleId}:`, result);
+            inputData[i] = result;
+          } else {
+            console.log(`Unknown node type for ${inputHandleId}: ${node.type}`);
+            inputData[i] = '';
+          }
+        } else {
+          console.log(`No connection found for ${inputHandleId}`);
+          inputData[i] = '';
+        }
+      }
+      
+      console.log(`Final input data for ${nodeId}:`, inputData);
+      return inputData;
+    }
+
+    // その他のノードタイプの場合（従来の処理）
+    const inputConnections = getConnectedNodesByHandle(nodeId, 'input');
+    console.log(`getNodeInputData for non-function nodeId ${nodeId}:`, inputConnections);
+    return inputConnections.map(({ node, edge }) => {
+      console.log(`Processing input node:`, node, 'edge:', edge);
       if (node.type === 'memo') {
         const content = node.data?.content || '';
         console.log(`Memo node content:`, content);
         return content;
-      } else if (node.type === 'function') {
-        const result = node.data?.executionResult || node.data?.lastOutput || '';
-        console.log(`Function node result:`, result);
-        return result;
       }
-      console.log(`Unknown node type: ${node.type}`);
       return '';
     });
-  }, [getConnectedNodes]);
+  }, [getConnectedNodesByHandle, nodes]);
 
   // ノードデータを更新する関数
   const updateNodeData = useCallback((nodeId: string, data: any) => {
@@ -117,6 +193,8 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
 
     // 入力データを取得
     const inputData = getNodeInputData(nodeId);
+    console.log(`=== EXECUTION START for ${nodeId} ===`);
+    console.log(`Input data:`, inputData);
     
     // ノードタイプに応じて実行
     if (node.type === 'function') {
@@ -136,12 +214,26 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
           lastExitCode: result.exitCode
         });
 
-        // 接続先のノードに結果を伝播
-        const outputNodes = getConnectedNodes(nodeId, 'output');
-        console.log(`Output nodes for ${nodeId}:`, outputNodes);
+        // stdoutハンドルから接続されたノードに結果を伝播
+        const stdoutConnections = getConnectedNodesByHandle(nodeId, 'output', 'stdout');
+        console.log(`Stdout connections for ${nodeId}:`, stdoutConnections);
         console.log(`Execution result stdout:`, result.stdout);
-        outputNodes.forEach(outputNode => {
-          console.log(`Processing output node:`, outputNode);
+        console.log(`All edges:`, edges);
+        
+        // デバッグ: すべての出力接続を確認
+        const allOutputConnections = getConnectedNodesByHandle(nodeId, 'output');
+        console.log(`All output connections for ${nodeId}:`, allOutputConnections);
+        
+        stdoutConnections.forEach(({ node: outputNode, edge }) => {
+          console.log(`Processing stdout output node:`, outputNode);
+          console.log(`Edge details:`, edge);
+          console.log(`=== OUTPUT ANALYSIS ===`);
+          console.log(`Executing node ID: ${nodeId}`);
+          console.log(`Output node ID: ${outputNode.id}`);
+          console.log(`Same node? ${nodeId === outputNode.id}`);
+          console.log(`Current output node content:`, outputNode.data?.content);
+          console.log(`Result to write:`, result.stdout);
+          
           if (outputNode.type === 'memo') {
             console.log(`Updating memo node ${outputNode.id} with content:`, result.stdout);
             updateNodeData(outputNode.id, { content: result.stdout });
@@ -222,6 +314,7 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
   const executionContextValue: NodeExecutionContext = {
     executeNode,
     getConnectedNodes,
+    getConnectedNodesByHandle,
     getNodeInputData,
     updateNodeData
   };

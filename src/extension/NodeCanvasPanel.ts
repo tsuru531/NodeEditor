@@ -156,21 +156,38 @@ export class NodeCanvasPanel {
         try {
             const { functionBody, arguments: args, nodeId } = message;
             
-            // bashコマンドを構築
-            let bashCommand = functionBody;
+            console.log('=== NODECANVASPANEL DEBUG ===');
+            console.log('Received message:', message);
+            console.log('Received functionBody:', functionBody);
+            console.log('Received arguments:', args);
+            console.log('Node ID:', nodeId);
             
-            // 引数を順番に置換 ($1, $2, ...)
+            // 環境変数として引数を設定
+            const env = { ...process.env };
             if (args && Array.isArray(args)) {
                 args.forEach((arg: string, index: number) => {
-                    const placeholder = `$${index + 1}`;
-                    bashCommand = bashCommand.replace(new RegExp(`\\${placeholder}\\b`, 'g'), arg);
+                    env[`ARG${index + 1}`] = arg;
                 });
             }
             
+            // bash関数を定義してから実行するスクリプトを作成
+            let bashScript = functionBody;
+            
+            // 引数がある場合は、$1, $2, ... を適切に設定
+            if (args && Array.isArray(args) && args.length > 0) {
+                // 引数をスクリプトに渡すため、set -- を使用
+                const quotedArgs = args.map(arg => `'${arg.replace(/'/g, "'\"'\"'")}'`).join(' ');
+                bashScript = `set -- ${quotedArgs}\n${functionBody}`;
+            }
+            
+            console.log('Final bashScript to execute:');
+            console.log(bashScript);
+            console.log('========================');
+            
             // bashプロセスを実行
-            const bashProcess = spawn('bash', ['-c', bashCommand], {
+            const bashProcess = spawn('bash', ['-c', bashScript], {
                 cwd: vscode.workspace.workspaceFolders?.[0]?.uri.fsPath,
-                env: process.env
+                env: env
             });
             
             let stdout = '';
