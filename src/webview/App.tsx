@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom/client';
 import { ThemeProvider } from './providers/ThemeProvider';
+import { FunctionRegistryProvider } from './providers/FunctionRegistryProvider';
 import { EditorLayout } from './components/EditorLayout';
 import './styles/main.css';
 import './styles/layout.css';
@@ -41,7 +42,9 @@ const App: React.FC = () => {
 
   return (
     <ThemeProvider>
-      <EditorLayout />
+      <FunctionRegistryProvider>
+        <EditorLayout />
+      </FunctionRegistryProvider>
     </ThemeProvider>
   );
 };

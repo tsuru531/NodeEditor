@@ -66,7 +66,13 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             📝 メモノード
           </MenuItem>
           <MenuItem onClick={() => handleMenuClick(() => onAddNode('function'))}>
-            ⚡ 関数ノード
+            ⚡ 関数ノード（旧）
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuClick(() => onAddNode('functionDefinition'))}>
+            🔧 関数定義ノード
+          </MenuItem>
+          <MenuItem onClick={() => handleMenuClick(() => onAddNode('functionCall'))}>
+            ⚡ 関数呼び出しノード
           </MenuItem>
           <MenuItem onClick={() => handleMenuClick(() => onAddNode('file'))}>
             📁 ファイルノード

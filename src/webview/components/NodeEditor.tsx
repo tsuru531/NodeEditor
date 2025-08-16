@@ -566,6 +566,24 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
         connectorType: 'pass-through',
         condition: ''
       };
+    } else if (nodeType === 'functionDefinition') {
+      nodeData = {
+        functionName: 'my_function',
+        parameters: ['param1'],
+        functionBody: 'echo "Hello $1"',
+        language: 'bash',
+        description: '',
+        isEditing: false,
+        executionResult: '',
+        isExecuting: false
+      };
+    } else if (nodeType === 'functionCall') {
+      nodeData = {
+        selectedFunction: '',
+        inputValues: {},
+        executionResult: '',
+        isExecuting: false
+      };
     }
 
     const newNode: Node = {

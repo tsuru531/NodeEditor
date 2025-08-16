@@ -4,6 +4,8 @@ import {
   MemoNode,
   FileNode,
   FunctionNode,
+  FunctionDefinitionNode,
+  FunctionCallNode,
   ConnectorNode
 } from '../nodeTypes';
 
@@ -14,6 +16,8 @@ export const nodeTypes: NodeTypes = {
   memo: MemoNode,
   file: FileNode,
   function: FunctionNode,
+  functionDefinition: FunctionDefinitionNode,
+  functionCall: FunctionCallNode,
   connector: ConnectorNode,
 };
 
