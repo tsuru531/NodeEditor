@@ -14,6 +14,10 @@ import ReactFlow, {
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { nodeTypes, defaultViewport, connectionLineStyle, defaultEdgeOptions } from '../config/reactFlowConfig';
+import { ContextMenu } from './ContextMenu';
+import { useHistory } from '../hooks/useHistory';
+import { NotificationToast } from './NotificationToast';
+import { useNotifications } from '../hooks/useNotifications';
 
 // ノード実行コンテキスト
 export const NodeExecutionContext = React.createContext<NodeExecutionContext | null>(null);
@@ -52,6 +56,16 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
   const [nodes, setNodes, onNodesChangeInternal] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChangeInternal] = useEdgesState(initialEdges);
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ isVisible: boolean; position: { x: number; y: number } }>({
+    isVisible: false,
+    position: { x: 0, y: 0 }
+  });
+  
+  // Undo/Redo履歴管理
+  const { canUndo, canRedo, undo, redo, pushState } = useHistory();
+  
+  // 通知システム
+  const { notifications, removeNotification, showSuccess, showError, showInfo } = useNotifications();
 
   // 接続されたノードを取得する関数
   const getConnectedNodes = useCallback((nodeId: string, direction: 'input' | 'output'): Node[] => {
@@ -201,9 +215,18 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
     updateNodeData
   };
 
+  // 履歴に状態を保存
+  const saveToHistory = useCallback(() => {
+    pushState(nodes, edges);
+  }, [nodes, edges, pushState]);
+
   const onConnect = useCallback(
-    (params: Connection | Edge) => setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds)),
-    [setEdges]
+    (params: Connection | Edge) => {
+      setEdges((eds) => addEdge({ ...params, ...defaultEdgeOptions }, eds));
+      // 接続後に履歴保存
+      setTimeout(() => saveToHistory(), 100);
+    },
+    [setEdges, saveToHistory]
   );
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -268,8 +291,10 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
       console.log('Creating new node:', newNode);
 
       setNodes((nds) => nds.concat(newNode));
+      // ノード追加後に履歴保存
+      setTimeout(() => saveToHistory(), 100);
     },
-    [reactFlowInstance, setNodes]
+    [reactFlowInstance, setNodes, saveToHistory]
   );
 
   const onSelectionChange = useCallback(
@@ -281,9 +306,206 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
     [onNodeSelect]
   );
 
+  // キーボードショートカットのハンドリング
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    // 入力フィールドにフォーカスが当たっている場合はショートカットを無効にする
+    const activeElement = document.activeElement;
+    if (activeElement?.tagName === 'INPUT' || activeElement?.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    // Ctrl+A: 全選択
+    if (event.ctrlKey && event.key === 'a') {
+      event.preventDefault();
+      setNodes(nds => nds.map(node => ({ ...node, selected: true })));
+      return;
+    }
+
+    // Delete: 選択されたノードを削除
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault();
+      const selectedNodes = nodes.filter(node => node.selected);
+      const selectedNodeIds = selectedNodes.map(node => node.id);
+      
+      if (selectedNodeIds.length > 0) {
+        // ノードを削除
+        setNodes(nds => nds.filter(node => !selectedNodeIds.includes(node.id)));
+        // 関連するエッジも削除
+        setEdges(eds => eds.filter(edge => 
+          !selectedNodeIds.includes(edge.source) && !selectedNodeIds.includes(edge.target)
+        ));
+      }
+      return;
+    }
+
+    // Ctrl+C: コピー（将来の実装のため）
+    if (event.ctrlKey && event.key === 'c') {
+      event.preventDefault();
+      const selectedNodes = nodes.filter(node => node.selected);
+      if (selectedNodes.length > 0) {
+        // 将来のコピー機能実装用
+        console.log('Copy nodes:', selectedNodes);
+      }
+      return;
+    }
+
+    // Ctrl+Z: Undo
+    if (event.ctrlKey && event.key === 'z' && !event.shiftKey) {
+      event.preventDefault();
+      if (canUndo) {
+        const previousState = undo();
+        if (previousState) {
+          setNodes(previousState.nodes);
+          setEdges(previousState.edges);
+          showInfo('元に戻しました', '前の状態に復元しました');
+        }
+      } else {
+        showInfo('元に戻せません', '履歴がありません');
+      }
+      return;
+    }
+
+    // Ctrl+Y または Ctrl+Shift+Z: Redo
+    if ((event.ctrlKey && event.key === 'y') || (event.ctrlKey && event.shiftKey && event.key === 'z')) {
+      event.preventDefault();
+      if (canRedo) {
+        const nextState = redo();
+        if (nextState) {
+          setNodes(nextState.nodes);
+          setEdges(nextState.edges);
+          showInfo('やり直しました', '次の状態に進みました');
+        }
+      } else {
+        showInfo('やり直せません', 'やり直し履歴がありません');
+      }
+      return;
+    }
+
+    // Escape: 選択解除
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setNodes(nds => nds.map(node => ({ ...node, selected: false })));
+      setEdges(eds => eds.map(edge => ({ ...edge, selected: false })));
+      return;
+    }
+
+    // Space: フィット表示
+    if (event.key === ' ') {
+      event.preventDefault();
+      if (reactFlowInstance) {
+        reactFlowInstance.fitView();
+      }
+      return;
+    }
+  }, [nodes, setNodes, setEdges, reactFlowInstance, canUndo, canRedo, undo, redo, showInfo]);
+
+  // キーボードイベントリスナーの設定
+  useEffect(() => {
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
+
+  // コンテキストメニューのハンドリング
+  const handleContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    setContextMenu({
+      isVisible: true,
+      position: { x: event.clientX, y: event.clientY }
+    });
+  }, []);
+
+  const closeContextMenu = useCallback(() => {
+    setContextMenu({ isVisible: false, position: { x: 0, y: 0 } });
+  }, []);
+
+  // コンテキストメニューからノードを追加
+  const addNodeFromContextMenu = useCallback((nodeType: string) => {
+    if (!reactFlowInstance) return;
+
+    // マウス位置をcanvas座標に変換
+    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!reactFlowBounds) return;
+
+    const position = reactFlowInstance.project({
+      x: contextMenu.position.x - reactFlowBounds.left,
+      y: contextMenu.position.y - reactFlowBounds.top,
+    });
+
+    // ノードタイプに応じた初期データを設定
+    let nodeData: any = { label: `${nodeType} node` };
+    
+    if (nodeType === 'function') {
+      nodeData = {
+        functionName: 'my_function',
+        parameters: ['param1'],
+        functionBody: 'echo "Hello $1"',
+        language: 'bash',
+        isEditing: false,
+        executionResult: '',
+        isExecuting: false
+      };
+    } else if (nodeType === 'memo') {
+      nodeData = {
+        content: '',
+        isEditing: false
+      };
+    } else if (nodeType === 'file') {
+      nodeData = {
+        filePath: '',
+        content: '',
+        isLoaded: false
+      };
+    } else if (nodeType === 'connector') {
+      nodeData = {
+        connectorType: 'pass-through',
+        condition: ''
+      };
+    }
+
+    const newNode: Node = {
+      id: `${nodeType}_${Date.now()}`,
+      type: nodeType,
+      position,
+      data: nodeData,
+    };
+
+    setNodes((nds) => nds.concat(newNode));
+    // コンテキストメニューからのノード追加後に履歴保存
+    setTimeout(() => saveToHistory(), 100);
+  }, [reactFlowInstance, contextMenu.position, setNodes, saveToHistory]);
+
+  // 選択されたノードを削除
+  const deleteSelectedNodes = useCallback(() => {
+    const selectedNodes = nodes.filter(node => node.selected);
+    const selectedNodeIds = selectedNodes.map(node => node.id);
+    
+    if (selectedNodeIds.length > 0) {
+      setNodes(nds => nds.filter(node => !selectedNodeIds.includes(node.id)));
+      setEdges(eds => eds.filter(edge => 
+        !selectedNodeIds.includes(edge.source) && !selectedNodeIds.includes(edge.target)
+      ));
+    }
+  }, [nodes, setNodes, setEdges]);
+
+  // 選択されたノードをコピー
+  const copySelectedNodes = useCallback(() => {
+    const selectedNodes = nodes.filter(node => node.selected);
+    if (selectedNodes.length > 0) {
+      console.log('Copy nodes:', selectedNodes);
+      // 将来のコピー機能実装用
+    }
+  }, [nodes]);
+
+  // 全ノードを選択
+  const selectAllNodes = useCallback(() => {
+    setNodes(nds => nds.map(node => ({ ...node, selected: true })));
+  }, [setNodes]);
+
   return (
     <NodeExecutionContext.Provider value={executionContextValue}>
-      <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }}>
+      <div ref={reactFlowWrapper} style={{ width: '100%', height: '100%' }} onContextMenu={handleContextMenu}>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -309,6 +531,20 @@ export const NodeEditor: React.FC<NodeEditorProps> = ({
           <Controls />
           <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         </ReactFlow>
+        <ContextMenu
+          isVisible={contextMenu.isVisible}
+          position={contextMenu.position}
+          onClose={closeContextMenu}
+          onAddNode={addNodeFromContextMenu}
+          onDeleteSelected={deleteSelectedNodes}
+          onCopySelected={copySelectedNodes}
+          onSelectAll={selectAllNodes}
+          hasSelectedNodes={nodes.some(node => node.selected)}
+        />
+        <NotificationToast
+          notifications={notifications}
+          onRemove={removeNotification}
+        />
       </div>
     </NodeExecutionContext.Provider>
   );

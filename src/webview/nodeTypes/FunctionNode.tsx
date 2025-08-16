@@ -22,12 +22,12 @@ const supportedLanguages = ['bash'];
 
 const getLanguageIcon = (language: string): string => {
   switch (language) {
-    case 'bash': return '$';
+    case 'bash': return '⚡';
     default: return '🔧';
   }
 };
 
-export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }) => {
+export const FunctionNode: React.FC<FunctionNodeProps> = React.memo(({ data, id, selected }) => {
   const [functionName, setFunctionName] = useState(data.functionName || 'my_function');
   const [parameters, setParameters] = useState<string[]>(data.parameters || ['param1']);
   const [functionBody, setFunctionBody] = useState(data.functionBody || 'echo "Hello $1"');
@@ -131,7 +131,7 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
         minWidth: '350px',
         maxWidth: '500px',
         background: 'var(--node-background)',
-        border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--node-border)'}`,
+        border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--function-node-color)'}`,
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
       }}
@@ -153,9 +153,12 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
           <span style={{ 
             fontSize: '12px', 
             fontWeight: 'bold',
-            color: 'var(--text-color)',
+            color: 'var(--function-node-color)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
           }}>
-            {getLanguageIcon(language)} {functionName}()
+            <span style={{ fontSize: '14px' }}>{getLanguageIcon(language)}</span> {functionName}()
           </span>
           <span
             onClick={toggleCollapse}
@@ -447,4 +450,4 @@ export const FunctionNode: React.FC<FunctionNodeProps> = ({ data, id, selected }
       </div>
     </div>
   );
-};
+});

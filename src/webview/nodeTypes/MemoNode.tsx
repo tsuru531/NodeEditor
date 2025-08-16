@@ -13,7 +13,7 @@ interface MemoNodeProps {
   selected: boolean;
 }
 
-export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
+export const MemoNode: React.FC<MemoNodeProps> = React.memo(({ data, id, selected }) => {
   const [content, setContent] = useState(data.content || '');
   const [isEditing, setIsEditing] = useState(data.isEditing || false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -79,7 +79,7 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
         minWidth: '120px',
         minHeight: isCollapsed ? '40px' : '80px',
         background: 'var(--node-background)',
-        border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--node-border)'}`,
+        border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--memo-node-color)'}`,
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
         position: 'relative',
@@ -118,12 +118,15 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
           <span style={{ 
             fontSize: '11px', 
             fontWeight: 'bold',
-            color: 'var(--text-color)',
+            color: 'var(--memo-node-color)',
             overflow: 'hidden',
             textOverflow: 'ellipsis',
             whiteSpace: 'nowrap',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
           }}>
-            📝 txt
+            <span style={{ fontSize: '12px' }}>📝</span> Memo
           </span>
           <span
             onClick={toggleCollapse}
@@ -220,4 +223,4 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
       />
     </div>
   );
-};
+});
