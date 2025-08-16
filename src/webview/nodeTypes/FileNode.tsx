@@ -7,6 +7,13 @@ interface FileNodeData {
   fileType?: string;
   previewContent?: string;
   isConnected?: boolean;
+  lastModified?: Date;
+  fileSize?: number;
+  hash?: string;
+  syncStatus?: 'synced' | 'modified' | 'missing' | 'error';
+  autoSync?: boolean;
+  embeddedContent?: string;
+  referenceType?: 'relative' | 'absolute' | 'embedded';
 }
 
 interface FileNodeProps {
@@ -21,6 +28,11 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
   const [fileType, setFileType] = useState(data.fileType || '');
   const [previewContent, setPreviewContent] = useState(data.previewContent || '');
   const [isEditing, setIsEditing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'modified' | 'missing' | 'error'>(data.syncStatus || 'synced');
+  const [lastModified, setLastModified] = useState<Date | undefined>(data.lastModified);
+  const [fileSize, setFileSize] = useState<number | undefined>(data.fileSize);
+  const [autoSync, setAutoSync] = useState(data.autoSync ?? true);
+  const [referenceType, setReferenceType] = useState<'relative' | 'absolute' | 'embedded'>(data.referenceType || 'relative');
 
   useEffect(() => {
     if (filePath) {
@@ -126,6 +138,113 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
     }
   }, [filePath]);
 
+  const checkFileStatus = useCallback(async () => {
+    if (!filePath) return;
+    
+    if (typeof window !== 'undefined' && (window as any).vscode) {
+      (window as any).vscode.postMessage({
+        command: 'checkFileStatus',
+        nodeId: id,
+        filePath: filePath,
+      });
+    }
+  }, [id, filePath]);
+
+  const toggleAutoSync = useCallback(() => {
+    const newAutoSync = !autoSync;
+    setAutoSync(newAutoSync);
+    
+    if (typeof window !== 'undefined' && (window as any).vscode) {
+      (window as any).vscode.postMessage({
+        command: 'updateFileNodeSettings',
+        nodeId: id,
+        autoSync: newAutoSync,
+        referenceType: referenceType,
+      });
+    }
+  }, [autoSync, id, referenceType]);
+
+  const toggleReferenceType = useCallback(() => {
+    const types: ('relative' | 'absolute' | 'embedded')[] = ['relative', 'absolute', 'embedded'];
+    const currentIndex = types.indexOf(referenceType);
+    const newType = types[(currentIndex + 1) % types.length];
+    setReferenceType(newType);
+    
+    if (typeof window !== 'undefined' && (window as any).vscode) {
+      (window as any).vscode.postMessage({
+        command: 'updateFileNodeSettings',
+        nodeId: id,
+        autoSync: autoSync,
+        referenceType: newType,
+      });
+    }
+  }, [autoSync, id, referenceType]);
+
+  const getSyncStatusIcon = useCallback(() => {
+    switch (syncStatus) {
+      case 'synced': return '✅';
+      case 'modified': return '⚠️';
+      case 'missing': return '❌';
+      case 'error': return '🔴';
+      default: return '❓';
+    }
+  }, [syncStatus]);
+
+  const getSyncStatusText = useCallback(() => {
+    switch (syncStatus) {
+      case 'synced': return '同期済み';
+      case 'modified': return 'ファイル変更あり';
+      case 'missing': return 'ファイル見つからず';
+      case 'error': return 'エラー';
+      default: return '不明';
+    }
+  }, [syncStatus]);
+
+  const getReferenceTypeIcon = useCallback(() => {
+    switch (referenceType) {
+      case 'relative': return '📂';
+      case 'absolute': return '🔗';
+      case 'embedded': return '📦';
+      default: return '❓';
+    }
+  }, [referenceType]);
+
+  // ファイル状態を定期的にチェック
+  useEffect(() => {
+    if (autoSync && filePath) {
+      const interval = setInterval(checkFileStatus, 5000); // 5秒間隔
+      return () => clearInterval(interval);
+    }
+  }, [autoSync, filePath, checkFileStatus]);
+
+  // WebViewからのメッセージを受信
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.nodeId === id) {
+        switch (message.type) {
+          case 'fileStatusUpdate':
+            setSyncStatus(message.syncStatus);
+            setLastModified(message.lastModified ? new Date(message.lastModified) : undefined);
+            setFileSize(message.fileSize);
+            if (message.previewContent) {
+              setPreviewContent(message.previewContent);
+            }
+            break;
+          case 'fileContentUpdate':
+            setPreviewContent(message.content);
+            setSyncStatus('synced');
+            break;
+        }
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('message', handleMessage);
+      return () => window.removeEventListener('message', handleMessage);
+    }
+  }, [id]);
+
   return (
     <div 
       className={`file-node ${selected ? 'selected' : ''}`}
@@ -158,12 +277,27 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
         }}>
           {getFileIcon(fileType)} ファイル参照
         </span>
-        <span style={{ 
-          fontSize: '10px', 
-          color: 'var(--text-muted)',
-        }}>
-          {fileType}
-        </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <span 
+            title={getSyncStatusText()}
+            style={{ fontSize: '10px' }}
+          >
+            {getSyncStatusIcon()}
+          </span>
+          <span 
+            title={`参照タイプ: ${referenceType}`}
+            style={{ fontSize: '10px', cursor: 'pointer' }}
+            onClick={toggleReferenceType}
+          >
+            {getReferenceTypeIcon()}
+          </span>
+          <span style={{ 
+            fontSize: '10px', 
+            color: 'var(--text-muted)',
+          }}>
+            {fileType}
+          </span>
+        </div>
       </div>
 
       {/* ファイルパス入力 */}
@@ -227,6 +361,35 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
           <div style={{ color: 'var(--text-color)', marginBottom: '4px' }}>
             <strong>ファイル名:</strong> {fileName}
           </div>
+          {fileSize !== undefined && (
+            <div style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <strong>サイズ:</strong> {fileSize < 1024 ? `${fileSize}B` : 
+                fileSize < 1024 * 1024 ? `${Math.round(fileSize / 1024)}KB` : 
+                `${Math.round(fileSize / (1024 * 1024))}MB`}
+            </div>
+          )}
+          {lastModified && (
+            <div style={{ color: 'var(--text-muted)', marginBottom: '4px' }}>
+              <strong>更新:</strong> {lastModified.toLocaleString()}
+            </div>
+          )}
+          <div style={{ color: 'var(--text-muted)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span><strong>同期:</strong> {getSyncStatusText()}</span>
+            <button
+              onClick={toggleAutoSync}
+              style={{
+                padding: '2px 6px',
+                fontSize: '9px',
+                border: '1px solid var(--button-border)',
+                borderRadius: '3px',
+                background: autoSync ? 'var(--success-color)' : 'var(--button-background)',
+                color: autoSync ? 'white' : 'var(--button-text)',
+                cursor: 'pointer',
+              }}
+            >
+              {autoSync ? 'ON' : 'OFF'}
+            </button>
+          </div>
           {previewContent && (
             <div style={{ 
               color: 'var(--text-muted)',
@@ -234,6 +397,10 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
               maxHeight: '80px',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
+              border: '1px solid var(--node-border)',
+              borderRadius: '4px',
+              padding: '6px',
+              background: 'var(--code-background)',
             }}>
               {previewContent.substring(0, 150)}
               {previewContent.length > 150 && '...'}
@@ -247,7 +414,7 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
         style={{ 
           padding: '8px 12px',
           display: 'flex',
-          gap: '8px',
+          gap: '6px',
           borderTop: '1px solid var(--node-border)',
         }}
       >
@@ -255,8 +422,8 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
           onClick={handleFileSelect}
           style={{
             flex: 1,
-            padding: '4px 8px',
-            fontSize: '10px',
+            padding: '4px 6px',
+            fontSize: '9px',
             border: '1px solid var(--button-border)',
             borderRadius: '4px',
             background: 'var(--button-background)',
@@ -271,8 +438,8 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
           disabled={!filePath}
           style={{
             flex: 1,
-            padding: '4px 8px',
-            fontSize: '10px',
+            padding: '4px 6px',
+            fontSize: '9px',
             border: '1px solid var(--button-border)',
             borderRadius: '4px',
             background: filePath ? 'var(--button-background)' : 'var(--button-disabled)',
@@ -283,12 +450,29 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
           読込
         </button>
         <button
+          onClick={checkFileStatus}
+          disabled={!filePath}
+          title="ファイル状態を再確認"
+          style={{
+            flex: 1,
+            padding: '4px 6px',
+            fontSize: '9px',
+            border: '1px solid var(--button-border)',
+            borderRadius: '4px',
+            background: filePath ? 'var(--warning-color)' : 'var(--button-disabled)',
+            color: filePath ? 'white' : 'var(--text-muted)',
+            cursor: filePath ? 'pointer' : 'not-allowed',
+          }}
+        >
+          同期
+        </button>
+        <button
           onClick={openFile}
           disabled={!filePath}
           style={{
             flex: 1,
-            padding: '4px 8px',
-            fontSize: '10px',
+            padding: '4px 6px',
+            fontSize: '9px',
             border: '1px solid var(--button-border)',
             borderRadius: '4px',
             background: filePath ? 'var(--button-background)' : 'var(--button-disabled)',

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { ProjectManager } from '../project/ProjectManager';
 
 /**
  * 拡張機能がアクティベートされたときに呼ばれる
@@ -6,6 +7,115 @@ import * as vscode from 'vscode';
  */
 export function activate(context: vscode.ExtensionContext) {
     console.log('NodeCanvas拡張機能がアクティベートされました');
+
+    // プロジェクトマネージャーのインスタンスを取得
+    const projectManager = ProjectManager.getInstance();
+
+    // コマンド: 新しいプロジェクトを作成
+    const newProjectCommand = vscode.commands.registerCommand(
+        'nodecanvas.newProject',
+        async () => {
+            try {
+                await projectManager.createNewProject();
+                vscode.window.showInformationMessage('新しいプロジェクトを作成しました');
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクト作成エラー: ${error}`);
+            }
+        }
+    );
+
+    // コマンド: プロジェクトを開く
+    const openProjectCommand = vscode.commands.registerCommand(
+        'nodecanvas.openProject',
+        async () => {
+            try {
+                await projectManager.openProject();
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクトを開けませんでした: ${error}`);
+            }
+        }
+    );
+
+    // コマンド: プロジェクトを保存
+    const saveProjectCommand = vscode.commands.registerCommand(
+        'nodecanvas.saveProject',
+        async () => {
+            try {
+                const config = vscode.workspace.getConfiguration('nodecanvas');
+                const autoBackup = config.get<boolean>('autoBackup', true);
+                
+                await projectManager.saveProject(undefined, { 
+                    createBackup: autoBackup 
+                });
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクト保存エラー: ${error}`);
+            }
+        }
+    );
+
+    // コマンド: プロジェクトを名前を付けて保存
+    const saveProjectAsCommand = vscode.commands.registerCommand(
+        'nodecanvas.saveProjectAs',
+        async () => {
+            try {
+                const config = vscode.workspace.getConfiguration('nodecanvas');
+                const autoBackup = config.get<boolean>('autoBackup', true);
+                
+                await projectManager.saveProjectAs({ 
+                    createBackup: autoBackup 
+                });
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクト保存エラー: ${error}`);
+            }
+        }
+    );
+
+    // コマンド: プロジェクトを閉じる
+    const closeProjectCommand = vscode.commands.registerCommand(
+        'nodecanvas.closeProject',
+        async () => {
+            try {
+                const closed = await projectManager.closeProject();
+                if (closed) {
+                    vscode.window.showInformationMessage('プロジェクトを閉じました');
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクトを閉じる際にエラーが発生しました: ${error}`);
+            }
+        }
+    );
+
+    // コマンド: 最近使用したプロジェクトを開く
+    const openRecentProjectCommand = vscode.commands.registerCommand(
+        'nodecanvas.openRecentProject',
+        async () => {
+            try {
+                const recentProjects = projectManager.getRecentProjects();
+                
+                if (recentProjects.length === 0) {
+                    vscode.window.showInformationMessage('最近使用したプロジェクトはありません');
+                    return;
+                }
+
+                const items = recentProjects.map(projectPath => ({
+                    label: vscode.workspace.asRelativePath(projectPath),
+                    description: projectPath,
+                    detail: `最終使用: ${new Date().toLocaleDateString()}`,
+                    projectPath
+                }));
+
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: '最近使用したプロジェクトを選択'
+                });
+
+                if (selected) {
+                    await projectManager.openProject(selected.projectPath);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`プロジェクトを開けませんでした: ${error}`);
+            }
+        }
+    );
 
     // コマンド: NodeCanvasを開く
     const openCanvasCommand = vscode.commands.registerCommand(
@@ -187,6 +297,12 @@ export function activate(context: vscode.ExtensionContext) {
 
     // コマンドとUIアイテムを登録
     context.subscriptions.push(
+        newProjectCommand,
+        openProjectCommand,
+        saveProjectCommand,
+        saveProjectAsCommand,
+        closeProjectCommand,
+        openRecentProjectCommand,
         openCanvasCommand,
         importFunctionCommand,
         exportWorkflowCommand,

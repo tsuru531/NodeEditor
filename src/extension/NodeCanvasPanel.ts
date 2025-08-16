@@ -1,6 +1,11 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { spawn } from 'child_process';
+import { ProjectManager } from '../project/ProjectManager';
+import { FileManager } from '../project/FileManager';
+import { TemplateManager } from '../project/TemplateManager';
+import { BashImporter } from '../project/BashImporter';
+import { BashExporter } from '../project/BashExporter';
 
 export class NodeCanvasPanel {
     public static currentPanel: NodeCanvasPanel | undefined;
@@ -10,6 +15,9 @@ export class NodeCanvasPanel {
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
     private _document?: vscode.TextDocument;
+    private readonly _projectManager: ProjectManager;
+    private readonly _fileManager: FileManager;
+    private readonly _templateManager: TemplateManager;
 
     public static createOrShow(extensionUri: vscode.Uri, document?: vscode.TextDocument) {
         const column = vscode.window.activeTextEditor
@@ -56,8 +64,19 @@ export class NodeCanvasPanel {
         this._panel = panel;
         this._extensionUri = extensionUri;
         this._document = document;
+        
+        // マネージャーの初期化
+        this._projectManager = ProjectManager.getInstance();
+        this._fileManager = FileManager.getInstance();
+        this._templateManager = TemplateManager.getInstance();
+        
+        // テンプレートマネージャーの初期化
+        this._templateManager.initialize().catch(error => {
+            console.error('テンプレートマネージャーの初期化に失敗:', error);
+        });
 
         this._update();
+        this._setupEventHandlers();
 
         this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
 
@@ -77,6 +96,33 @@ export class NodeCanvasPanel {
                         return;
                     case 'executeBashFunction':
                         this._executeBashFunction(message);
+                        return;
+                    case 'selectFile':
+                        this._handleSelectFile(message);
+                        return;
+                    case 'loadFilePreview':
+                        this._handleLoadFilePreview(message);
+                        return;
+                    case 'openFile':
+                        this._handleOpenFile(message);
+                        return;
+                    case 'checkFileStatus':
+                        this._handleCheckFileStatus(message);
+                        return;
+                    case 'updateFileNodeSettings':
+                        this._handleUpdateFileNodeSettings(message);
+                        return;
+                    case 'importBashScript':
+                        this._handleImportBashScript(message);
+                        return;
+                    case 'exportToScript':
+                        this._handleExportToScript(message);
+                        return;
+                    case 'applyTemplate':
+                        this._handleApplyTemplate(message);
+                        return;
+                    case 'createTemplate':
+                        this._handleCreateTemplate(message);
                         return;
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
@@ -98,8 +144,28 @@ export class NodeCanvasPanel {
         );
     }
 
+    /**
+     * イベントハンドラーのセットアップ
+     */
+    private _setupEventHandlers(): void {
+        // ファイル変更イベントのリスナー
+        this._fileManager.onFileChange((event) => {
+            this._panel.webview.postMessage({
+                type: 'fileStatusUpdate',
+                nodeId: event.nodeId,
+                syncStatus: event.fileInfo?.syncStatus || 'error',
+                lastModified: event.fileInfo?.lastModified,
+                fileSize: event.fileInfo?.size,
+                previewContent: event.fileInfo?.content
+            });
+        });
+    }
+
     public dispose() {
         NodeCanvasPanel.currentPanel = undefined;
+
+        // マネージャーの破棄
+        this._fileManager.dispose();
 
         this._panel.dispose();
 
@@ -243,6 +309,168 @@ export class NodeCanvasPanel {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error'
             });
+        }
+    }
+
+    /**
+     * ファイル選択ハンドラー
+     */
+    private async _handleSelectFile(message: any): Promise<void> {
+        try {
+            const filePath = await this._fileManager.selectFile();
+            if (filePath) {
+                this._panel.webview.postMessage({
+                    type: 'fileSelected',
+                    nodeId: message.nodeId,
+                    filePath: filePath
+                });
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`ファイル選択エラー: ${error}`);
+        }
+    }
+
+    /**
+     * ファイルプレビュー読み込みハンドラー
+     */
+    private async _handleLoadFilePreview(message: any): Promise<void> {
+        try {
+            const content = await this._fileManager.loadFileContent(message.filePath);
+            this._panel.webview.postMessage({
+                type: 'fileContentUpdate',
+                nodeId: message.nodeId,
+                content: content.substring(0, 1000) // プレビューは最初の1000文字のみ
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(`ファイル読み込みエラー: ${error}`);
+        }
+    }
+
+    /**
+     * ファイルを開くハンドラー
+     */
+    private async _handleOpenFile(message: any): Promise<void> {
+        try {
+            await this._fileManager.openFile(message.filePath);
+        } catch (error) {
+            vscode.window.showErrorMessage(`ファイルを開けませんでした: ${error}`);
+        }
+    }
+
+    /**
+     * ファイル状態チェックハンドラー
+     */
+    private async _handleCheckFileStatus(message: any): Promise<void> {
+        try {
+            const fileInfo = await this._fileManager.checkFileStatus(message.nodeId);
+            if (fileInfo) {
+                this._panel.webview.postMessage({
+                    type: 'fileStatusUpdate',
+                    nodeId: message.nodeId,
+                    syncStatus: fileInfo.syncStatus,
+                    lastModified: fileInfo.lastModified,
+                    fileSize: fileInfo.size,
+                    previewContent: fileInfo.content
+                });
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`ファイル状態確認エラー: ${error}`);
+        }
+    }
+
+    /**
+     * FileNode設定更新ハンドラー
+     */
+    private async _handleUpdateFileNodeSettings(message: any): Promise<void> {
+        try {
+            if (message.autoSync && message.filePath) {
+                await this._fileManager.watchFile(message.nodeId, message.filePath);
+            } else {
+                this._fileManager.unwatchFile(message.nodeId);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`ファイル監視設定エラー: ${error}`);
+        }
+    }
+
+    /**
+     * Bashスクリプトインポートハンドラー
+     */
+    private async _handleImportBashScript(message: any): Promise<void> {
+        try {
+            const result = await BashImporter.importFromScript(message.scriptContent, message.options);
+            this._panel.webview.postMessage({
+                type: 'bashImportResult',
+                result: result
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(`Bashインポートエラー: ${error}`);
+        }
+    }
+
+    /**
+     * スクリプトエクスポートハンドラー
+     */
+    private async _handleExportToScript(message: any): Promise<void> {
+        try {
+            const result = await BashExporter.exportToScript(message.nodes, message.edges, message.options);
+            
+            // ファイル保存ダイアログを表示
+            const uri = await vscode.window.showSaveDialog({
+                filters: {
+                    'Bash Scripts': ['sh', 'bash'],
+                    'All Files': ['*']
+                }
+            });
+
+            if (uri) {
+                await vscode.workspace.fs.writeFile(uri, Buffer.from(result.script, 'utf8'));
+                vscode.window.showInformationMessage(`スクリプトをエクスポートしました: ${uri.fsPath}`);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage(`エクスポートエラー: ${error}`);
+        }
+    }
+
+    /**
+     * テンプレート適用ハンドラー
+     */
+    private async _handleApplyTemplate(message: any): Promise<void> {
+        try {
+            const result = await this._templateManager.applyTemplate(
+                message.templateId,
+                message.parameters,
+                message.position
+            );
+            
+            this._panel.webview.postMessage({
+                type: 'templateApplied',
+                result: result
+            });
+        } catch (error) {
+            vscode.window.showErrorMessage(`テンプレート適用エラー: ${error}`);
+        }
+    }
+
+    /**
+     * テンプレート作成ハンドラー
+     */
+    private async _handleCreateTemplate(message: any): Promise<void> {
+        try {
+            const template = await this._templateManager.createTemplateFromSelection(
+                message.nodes,
+                message.edges,
+                message.templateInfo
+            );
+            
+            this._panel.webview.postMessage({
+                type: 'templateCreated',
+                template: template
+            });
+            
+            vscode.window.showInformationMessage(`テンプレート「${template.name}」を作成しました`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`テンプレート作成エラー: ${error}`);
         }
     }
 

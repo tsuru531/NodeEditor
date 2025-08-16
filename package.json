@@ -17,6 +17,12 @@
     "onCommand:nodecanvas.importFunction",
     "onCommand:nodecanvas.exportWorkflow",
     "onCommand:nodecanvas.openFromContext",
+    "onCommand:nodecanvas.newProject",
+    "onCommand:nodecanvas.openProject",
+    "onCommand:nodecanvas.saveProject",
+    "onCommand:nodecanvas.saveProjectAs",
+    "onCommand:nodecanvas.closeProject",
+    "onCommand:nodecanvas.openRecentProject",
     "onLanguage:shellscript"
   ],
   "contributes": {
@@ -24,6 +30,36 @@
       {
         "command": "nodecanvas.openCanvas",
         "title": "NodeCanvas: Open Canvas Editor"
+      },
+      {
+        "command": "nodecanvas.newProject",
+        "title": "NodeCanvas: New Project",
+        "icon": "$(file)"
+      },
+      {
+        "command": "nodecanvas.openProject",
+        "title": "NodeCanvas: Open Project",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "nodecanvas.saveProject",
+        "title": "NodeCanvas: Save Project",
+        "icon": "$(save)"
+      },
+      {
+        "command": "nodecanvas.saveProjectAs",
+        "title": "NodeCanvas: Save Project As...",
+        "icon": "$(save-as)"
+      },
+      {
+        "command": "nodecanvas.closeProject",
+        "title": "NodeCanvas: Close Project",
+        "icon": "$(close)"
+      },
+      {
+        "command": "nodecanvas.openRecentProject",
+        "title": "NodeCanvas: Open Recent Project",
+        "icon": "$(history)"
       },
       {
         "command": "nodecanvas.importFunction",
@@ -74,6 +110,24 @@
           "enum": ["memo", "file", "bashFunction"],
           "default": "memo",
           "description": "デフォルトで作成されるノードタイプ"
+        },
+        "nodecanvas.recentProjects": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "最近使用したプロジェクトのパス一覧"
+        },
+        "nodecanvas.autoBackup": {
+          "type": "boolean",
+          "default": true,
+          "description": "プロジェクト保存時に自動バックアップを作成"
+        },
+        "nodecanvas.fileWatcher": {
+          "type": "boolean",
+          "default": true,
+          "description": "参照ファイルの変更を監視"
         }
       }
     },
@@ -89,6 +143,16 @@
           ".sh",
           ".bash"
         ]
+      },
+      {
+        "id": "nodecanvas-project",
+        "aliases": [
+          "NodeCanvas Project"
+        ],
+        "extensions": [
+          ".nodecanvas"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ]
   },
