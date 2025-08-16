@@ -2,7 +2,7 @@ import React from 'react';
 
 const nodeTypes = [
   // Canvasノードタイプ
-  { type: 'memo', label: 'メモ', icon: '📝', description: 'Markdownテキストメモ', category: 'canvas' },
+  { type: 'memo', label: 'テキスト', icon: '📝', description: 'テキストメモ', category: 'canvas' },
   { type: 'file', label: 'ファイル', icon: '📁', description: 'ローカルファイル参照', category: 'canvas' },
   { type: 'function', label: '関数', icon: '🔧', description: '関数定義・実行', category: 'canvas' },
   { type: 'connector', label: 'コネクタ', icon: '🔗', description: 'データフロー制御', category: 'canvas' },

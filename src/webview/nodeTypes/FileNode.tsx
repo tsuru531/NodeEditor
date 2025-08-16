@@ -85,6 +85,23 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
     }
   }, [id]);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      const file = files[0];
+      // WebではFile.pathは利用できないため、名前のみ使用
+      setFilePath(file.name);
+    }
+  }, []);
+
   const loadFilePreview = useCallback(async () => {
     if (!filePath) return;
     
@@ -150,7 +167,11 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
       </div>
 
       {/* ファイルパス入力 */}
-      <div style={{ padding: '12px', borderBottom: '1px solid var(--node-border)' }}>
+      <div 
+        style={{ padding: '12px', borderBottom: '1px solid var(--node-border)' }}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+      >
         {isEditing ? (
           <input
             type="text"
@@ -183,7 +204,7 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
             onClick={() => setIsEditing(true)}
             style={{
               padding: '6px 8px',
-              border: '1px solid var(--input-border)',
+              border: '2px dashed var(--input-border)',
               borderRadius: '4px',
               background: 'var(--input-background)',
               color: filePath ? 'var(--text-color)' : 'var(--text-muted)',
@@ -192,9 +213,10 @@ export const FileNode: React.FC<FileNodeProps> = ({ data, id, selected }) => {
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
+              textAlign: 'center',
             }}
           >
-            {filePath || 'ファイルパスを入力...'}
+            {filePath || 'ファイルをドラッグ&ドロップまたはクリック'}
           </div>
         )}
       </div>

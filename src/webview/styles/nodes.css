@@ -1,6 +1,5 @@
 .custom-node {
   background: var(--vscode-editor-background);
-  border: 2px solid var(--vscode-panel-border);
   border-radius: 8px;
   padding: 0;
   min-width: 200px;
@@ -67,7 +66,6 @@
 
 .custom-node.selected {
   border-color: var(--vscode-focusBorder);
-  box-shadow: 0 0 0 1px var(--vscode-focusBorder);
 }
 
 .condition-handles {
@@ -212,10 +210,23 @@
   --border-color: var(--vscode-panel-border);
 }
 
+/* React Flowのデフォルトノードスタイルを無効化 */
+.react-flow__node {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.react-flow__node.react-flow__node-default {
+  border: none !important;
+  background: transparent !important;
+}
+
 /* 新ノードの共通スタイル */
 .memo-node,
 .file-node,
-.bash-function-node,
+.function-node,
 .connector-node {
   font-family: var(--vscode-font-family);
   line-height: 1.4;
@@ -223,7 +234,7 @@
 
 .memo-node .memo-header,
 .file-node .file-header,
-.bash-function-node .bash-function-header,
+.function-node .function-header,
 .connector-node .connector-header {
   font-weight: 600;
   user-select: none;
@@ -240,8 +251,8 @@
   font-family: var(--vscode-editor-font-family);
 }
 
-/* Bash関数ノード用スタイル */
-.bash-function-node pre {
+/* 関数ノード用スタイル */
+.function-node pre {
   white-space: pre-wrap;
   word-break: break-word;
 }

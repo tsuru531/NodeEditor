@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Handle, Position } from 'reactflow';
+import { Handle, Position, NodeResizer } from 'reactflow';
 
 interface MemoNodeData {
   content: string;
@@ -14,9 +14,8 @@ interface MemoNodeProps {
 }
 
 export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
-  const [content, setContent] = useState(data.content || '# メモ\n\nここにMarkdownテキストを入力してください。');
+  const [content, setContent] = useState(data.content || '');
   const [isEditing, setIsEditing] = useState(data.isEditing || false);
-  const [title, setTitle] = useState(data.title || 'メモ');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -27,11 +26,6 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
 
   const handleContentChange = useCallback((value: string) => {
     setContent(value);
-    // タイトルを最初の行から抽出
-    const firstLine = value.split('\n')[0];
-    if (firstLine.startsWith('#')) {
-      setTitle(firstLine.replace(/^#+\s*/, ''));
-    }
   }, []);
 
   const toggleEditMode = useCallback(() => {
@@ -48,60 +42,68 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
     }
   }, []);
 
-  // 簡易Markdownレンダリング（markdown-itがない場合の代替）
-  const renderMarkdown = useCallback((text: string) => {
-    return text
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
-      .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-      .replace(/`(.*?)`/gim, '<code>$1</code>')
-      .replace(/\n/gim, '<br>');
+  const handleDoubleClick = useCallback(() => {
+    if (!isEditing) {
+      setIsEditing(true);
+    }
+  }, [isEditing]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    const target = e.currentTarget as HTMLDivElement;
+    if (target.scrollHeight > target.clientHeight) {
+      // スクロール可能な場合のみイベントを止める
+      e.stopPropagation();
+    }
   }, []);
 
   return (
     <div 
-      className={`memo-node ${selected ? 'selected' : ''}`}
+      className={`memo-node ${selected ? 'selected' : ''} ${isEditing ? 'nodrag' : ''}`}
       style={{
-        minWidth: '200px',
-        maxWidth: '400px',
+        width: '200px',
+        height: '120px',
         background: 'var(--node-background)',
         border: `2px solid ${selected ? 'var(--selection-color)' : 'var(--node-border)'}`,
         borderRadius: '8px',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
       }}
+      onDoubleClick={handleDoubleClick}
     >
+      <NodeResizer
+        color="transparent"
+        isVisible={selected}
+        minWidth={120}
+        minHeight={80}
+        handleStyle={{
+          opacity: 0,
+          pointerEvents: 'auto',
+        }}
+        lineStyle={{
+          opacity: 0,
+        }}
+      />
       {/* ヘッダー */}
       <div 
         className="memo-header"
         style={{
-          padding: '8px 12px',
+          padding: '6px 12px',
           background: 'var(--node-header-background)',
           borderBottom: '1px solid var(--node-border)',
           borderRadius: '6px 6px 0 0',
-          cursor: 'pointer',
           display: 'flex',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-start',
           alignItems: 'center',
         }}
-        onClick={toggleEditMode}
       >
         <span style={{ 
-          fontSize: '12px', 
+          fontSize: '11px', 
           fontWeight: 'bold',
           color: 'var(--text-color)',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}>
-          📝 {title}
-        </span>
-        <span style={{ 
-          fontSize: '10px', 
-          color: 'var(--text-muted)',
-        }}>
-          {isEditing ? '編集中' : 'クリックで編集'}
+          📝 txt
         </span>
       </div>
 
@@ -110,9 +112,8 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
         className="memo-content"
         style={{
           padding: '12px',
-          minHeight: '100px',
-          maxHeight: '300px',
-          overflow: 'auto',
+          height: 'calc(100% - 40px)', // ヘッダー分を引く
+          overflow: 'hidden',
         }}
       >
         {isEditing ? (
@@ -124,30 +125,37 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
             onBlur={() => setIsEditing(false)}
             style={{
               width: '100%',
-              height: '150px',
+              height: '100%',
               border: 'none',
               outline: 'none',
-              resize: 'vertical',
+              resize: 'none',
               background: 'transparent',
               color: 'var(--text-color)',
               fontSize: '13px',
               fontFamily: 'Monaco, "Cascadia Code", "Roboto Mono", monospace',
               lineHeight: '1.4',
+              boxSizing: 'border-box',
+              padding: '0',
+              margin: '0',
             }}
-            placeholder="Markdownでメモを入力..."
           />
         ) : (
           <div 
+            tabIndex={0}
+            onWheel={handleWheel}
             style={{
               fontSize: '13px',
-              lineHeight: '1.5',
+              lineHeight: '1.4',
               color: 'var(--text-color)',
-              minHeight: '60px',
+              height: '100%',
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word',
+              overflow: 'auto',
+              outline: 'none',
             }}
-            dangerouslySetInnerHTML={{
-              __html: renderMarkdown(content)
-            }}
-          />
+          >
+            {content}
+          </div>
         )}
       </div>
 
@@ -158,6 +166,9 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
         style={{
           background: 'var(--handle-color)',
           border: '2px solid var(--handle-border)',
+          right: '-8px',
+          top: '50%',
+          transform: 'translateY(-50%)',
         }}
       />
       <Handle
@@ -166,6 +177,9 @@ export const MemoNode: React.FC<MemoNodeProps> = ({ data, id, selected }) => {
         style={{
           background: 'var(--handle-color)',
           border: '2px solid var(--handle-border)',
+          left: '-8px',
+          top: '50%',
+          transform: 'translateY(-50%)',
         }}
       />
     </div>
