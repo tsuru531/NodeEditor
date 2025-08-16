@@ -4,16 +4,16 @@
 日本語での対応を行います。コメント、ドキュメント、ユーザーとのコミュニケーションは日本語で行ってください。
 
 ## プロジェクト概要
-NodeEditor - Bashスクリプトをビジュアルノードエディタで編集できるVSCode拡張機能
+NodeCanvas - Canvas型ノードエディタで多様なコンテンツを自由に配置し実行可能なワークフローを構築するVSCode拡張機能
 
 ### 主要機能
-- Bashスクリプトのビジュアル編集
-- ノードベースのドラッグ&ドロップUI
-- スクリプト⇔ノードの双方向リアルタイム同期
+- 無限キャンバス上でのノード配置
+- メモ、ファイル、bash関数など多様なノードタイプ
+- ノード間接続による実行可能なワークフロー
 - VSCode拡張機能として動作
 
 ## ブランチ運用
-- **機能開発**: `feature/phase{番号}-{機能名}` 例: `feature/phase2-extension-entry`
+- **機能開発**: `feature/canvas-phase{番号}-{機能名}` 例: `feature/canvas-phase1-project-rename`
 - **バグ修正**: `fix/{issue番号}-{説明}` 例: `fix/123-parser-error`
 - **実験的機能**: `experiment/{機能名}`
 - 各タスク/フェーズごとにブランチを作成し、完了後mainにマージ
@@ -34,31 +34,35 @@ npm run test         # テスト実行
 ```
 src/
 ├── extension/       # VSCode拡張機能
-├── webview/        # React製ノードエディタUI
-├── parser/         # Bashパーサー
-├── generator/      # コード生成
-└── sync/           # リアルタイム同期
+├── webview/        # React製キャンバスUI
+├── parser/         # bash関数パーサー
+├── generator/      # ワークフロー実行
+└── sync/           # 状態同期
 ```
 
 ## 技術スタック
 - TypeScript / React / React Flow
 - VSCode Extension API / Webpack
-- bash-parser (npm)
+- Monaco Editor (コードエディタ)
+- Markdown-it (Markdownレンダリング)
 
 ## ノードタイプ
-- CommandNode (コマンド実行)
-- PipeNode (パイプ処理)  
-- ConditionNode (if/then/else)
-- LoopNode (for/while/until)
-- VariableNode (変数定義・参照)
-- FunctionNode (関数定義)
+- MemoNode (Markdownテキストメモ)
+- FileNode (ローカルファイル参照)
+- BashFunctionNode (bash関数定義・実行)
+- ConnectorNode (データフロー制御)
 
 ## 開発フェーズ
+### 従来フェーズ（完了）
 1. **Phase 1**: プロジェクト初期セットアップ ✅
-2. **Phase 2**: VSCode拡張機能基盤構築 ← 現在
-3. **Phase 3**: ノードエディタUI実装
-4. **Phase 4**: Bashパーサー実装
-5. **Phase 5**: 相互変換システム実装
-6. **Phase 6**: リアルタイム同期実装
+2. **Phase 2**: VSCode拡張機能基盤構築 ✅
+3. **Phase 3**: ノードエディタUI実装（部分完了）
 
-詳細は`tasks/`ディレクトリ参照。
+### Canvas フェーズ（新コンセプト）
+1. **Canvas Phase 1**: プロジェクト再定義とコンセプト明確化 ← 現在
+2. **Canvas Phase 2**: 新ノードタイプ実装
+3. **Canvas Phase 3**: ワークフロー実行エンジン
+4. **Canvas Phase 4**: UI/UX改善とポリッシュ
+5. **Canvas Phase 5**: ファイル管理とプロジェクト機能
+
+詳細は`tasks/phase_canvas_*`ディレクトリ参照。

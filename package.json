@@ -1,9 +1,9 @@
 {
-  "name": "nodeeditor",
-  "displayName": "NodeEditor - Bash Visual Script Editor",
+  "name": "nodecanvas",
+  "displayName": "NodeCanvas - Visual Workflow Editor",
   "version": "0.0.1",
-  "description": "Bashスクリプトをビジュアルノードエディタで編集できるVSCode拡張機能",
-  "publisher": "nodeeditor",
+  "description": "Canvas型ノードエディタ - メモ、ファイル、関数を自由に配置し実行可能なワークフローを構築",
+  "publisher": "nodecanvas",
   "main": "./out/extension/extension.js",
   "engines": {
     "vscode": "^1.85.0"
@@ -13,61 +13,67 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:nodeeditor.openEditor",
-    "onCommand:nodeeditor.importScript",
-    "onCommand:nodeeditor.exportScript",
-    "onCommand:nodeeditor.openFromContext",
+    "onCommand:nodecanvas.openCanvas",
+    "onCommand:nodecanvas.importFunction",
+    "onCommand:nodecanvas.exportWorkflow",
+    "onCommand:nodecanvas.openFromContext",
     "onLanguage:shellscript"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "nodeeditor.openEditor",
-        "title": "NodeEditor: Open Visual Editor"
+        "command": "nodecanvas.openCanvas",
+        "title": "NodeCanvas: Open Canvas Editor"
       },
       {
-        "command": "nodeeditor.importScript",
-        "title": "NodeEditor: Import Bash Script to Node Editor"
+        "command": "nodecanvas.importFunction",
+        "title": "NodeCanvas: Import Function to Canvas"
       },
       {
-        "command": "nodeeditor.exportScript",
-        "title": "NodeEditor: Export Nodes to Bash Script"
+        "command": "nodecanvas.exportWorkflow",
+        "title": "NodeCanvas: Export Workflow"
       }
     ],
     "menus": {
       "editor/context": [
         {
           "when": "resourceExtname == .sh || resourceExtname == .bash",
-          "command": "nodeeditor.openEditor",
+          "command": "nodecanvas.openCanvas",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
           "when": "resourceExtname == .sh || resourceExtname == .bash",
-          "command": "nodeeditor.openEditor",
+          "command": "nodecanvas.openCanvas",
           "group": "navigation"
         }
       ]
     },
     "configuration": {
-      "title": "NodeEditor",
+      "title": "NodeCanvas",
       "properties": {
-        "nodeeditor.autoSync": {
+        "nodecanvas.autoSave": {
           "type": "boolean",
           "default": true,
-          "description": "スクリプトとノードビューを自動的に同期"
+          "description": "キャンバスの変更を自動保存"
         },
-        "nodeeditor.syncDelay": {
-          "type": "number",
-          "default": 500,
-          "description": "変更を同期するまでの遅延（ミリ秒）"
+        "nodecanvas.gridSnap": {
+          "type": "boolean",
+          "default": false,
+          "description": "ノードをグリッドにスナップ"
         },
-        "nodeeditor.theme": {
+        "nodecanvas.theme": {
           "type": "string",
           "enum": ["light", "dark", "auto"],
           "default": "auto",
-          "description": "ノードエディタのカラーテーマ"
+          "description": "キャンバスエディタのカラーテーマ"
+        },
+        "nodecanvas.defaultNodeType": {
+          "type": "string",
+          "enum": ["memo", "file", "bashFunction"],
+          "default": "memo",
+          "description": "デフォルトで作成されるノードタイプ"
         }
       }
     },
@@ -102,12 +108,14 @@
     "url": "git+https://github.com/tsuru531/NodeEditor.git"
   },
   "keywords": [
-    "bash",
-    "shell",
-    "script",
-    "visual",
+    "canvas",
     "node",
-    "editor"
+    "editor",
+    "workflow",
+    "visual",
+    "memo",
+    "bash",
+    "function"
   ],
   "author": "",
   "license": "MIT",

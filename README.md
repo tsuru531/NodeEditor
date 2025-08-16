@@ -1,16 +1,16 @@
-# NodeEditor - Bash Visual Script Editor
+# NodeCanvas - Visual Workflow Editor
 
-Bashスクリプトをビジュアルノードエディタで編集できるVSCode拡張機能
+Canvas型ノードエディタ - メモ、ファイル、関数を自由に配置し実行可能なワークフローを構築
 
 ## 概要
 
-NodeEditorは、Bashスクリプトをノードベースのビジュアルインターフェースで編集できるVSCode拡張機能です。複雑なスクリプトをドラッグ&ドロップで構築し、リアルタイムでスクリプトとビジュアル表現を同期させることができます。
+NodeCanvasは、無限キャンバス上でメモ、ファイル、bash関数などを自由に配置し、視覚的なワークフローを構築できるVSCode拡張機能です。ObsidianのCanvasやComfyUIからインスピレーションを得た、新しいタイプのビジュアルエディタです。
 
 ## 主な機能
 
-- 🎨 **ビジュアル編集**: ノードベースのドラッグ&ドロップUI
-- 🔄 **双方向同期**: スクリプト⇔ノードのリアルタイム同期
-- 📝 **Bash構文サポート**: コマンド、パイプ、条件分岐、ループなど
+- 🎨 **無限キャンバス**: 制限のない2D空間でのノード配置
+- 📝 **多様なノードタイプ**: メモ、ファイル、bash関数などの様々なコンテンツ
+- 🔗 **ワークフロー実行**: ノード間の接続による実行可能なワークフロー
 - 🔧 **VSCode統合**: VSCode拡張機能として完全統合
 
 ## インストール
@@ -24,8 +24,8 @@ NodeEditorは、Bashスクリプトをノードベースのビジュアルイン
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/yourusername/NodeEditor.git
-cd NodeEditor
+git clone https://github.com/yourusername/NodeCanvas.git
+cd NodeCanvas
 
 # 依存関係のインストール
 npm install
@@ -39,32 +39,30 @@ npm run compile
 
 ## 使い方
 
-1. VSCodeでBashスクリプトファイル（`.sh`または`.bash`）を開く
-2. 右クリックメニューから「Open Bash Node Editor」を選択
-3. ノードエディタでスクリプトをビジュアル編集
-4. 変更は自動的にスクリプトファイルと同期
+1. VSCodeでコマンドパレットを開く（Ctrl+Shift+P）
+2. 「NodeCanvas: Open Canvas Editor」を実行
+3. 無限キャンバス上で様々なノードを配置・編集
+4. ノード間を接続してワークフローを構築
 
 ## サポートするノードタイプ
 
-- **Command Node**: 単一のコマンド実行
-- **Pipe Node**: パイプ処理（`|`, `|&`, `||`, `&&`）
-- **Condition Node**: 条件分岐（if/then/else）
-- **Loop Node**: ループ処理（for/while/until）
-- **Variable Node**: 変数定義と参照
-- **Function Node**: 関数定義
+- **Memo Node**: Markdownテキストメモ
+- **File Node**: ローカルファイル参照・プレビュー
+- **Bash Function Node**: bash関数定義・実行
+- **Connector Node**: データフロー制御・条件分岐
 
 ## 開発
 
 ### プロジェクト構造
 
 ```
-NodeEditor/
+NodeCanvas/
 ├── src/                    # ソースコード
 │   ├── extension/         # VSCode拡張機能
-│   ├── webview/          # React UIコンポーネント
-│   ├── parser/           # Bashパーサー
-│   ├── generator/        # コード生成
-│   └── sync/             # 同期機能
+│   ├── webview/          # React キャンバスUI
+│   ├── parser/           # bash関数パーサー
+│   ├── generator/        # ワークフロー実行
+│   └── sync/             # 状態同期
 ├── tasks/                 # 開発タスク管理
 └── resources/            # 静的リソース
 ```
@@ -85,9 +83,14 @@ npm run format
 npm run test
 ```
 
-### タスク管理
+### 開発フェーズ
 
-開発タスクは`tasks/`ディレクトリで管理されています。各フェーズごとに詳細なタスクが定義されているので、順番に実行してください。
+開発は段階的なフェーズで進められています：
+- **Canvas Phase 1**: プロジェクト再定義とコンセプト明確化
+- **Canvas Phase 2**: 新ノードタイプの実装
+- **Canvas Phase 3**: ワークフロー実行エンジン
+- **Canvas Phase 4**: UI/UX改善とポリッシュ
+- **Canvas Phase 5**: ファイル管理とプロジェクト機能
 
 ## コントリビューション
 

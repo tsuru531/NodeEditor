@@ -1,30 +1,32 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export class NodeEditorPanel {
-    public static currentPanel: NodeEditorPanel | undefined;
-    public static readonly viewType = 'nodeEditor';
+export class NodeCanvasPanel {
+    public static currentPanel: NodeCanvasPanel | undefined;
+    public static readonly viewType = 'nodeCanvas';
 
     private readonly _panel: vscode.WebviewPanel;
     private readonly _extensionUri: vscode.Uri;
     private _disposables: vscode.Disposable[] = [];
-    private _document: vscode.TextDocument;
+    private _document?: vscode.TextDocument;
 
-    public static createOrShow(extensionUri: vscode.Uri, document: vscode.TextDocument) {
+    public static createOrShow(extensionUri: vscode.Uri, document?: vscode.TextDocument) {
         const column = vscode.window.activeTextEditor
             ? vscode.window.activeTextEditor.viewColumn
             : undefined;
 
-        if (NodeEditorPanel.currentPanel) {
-            NodeEditorPanel.currentPanel._panel.reveal(column);
-            NodeEditorPanel.currentPanel._document = document;
-            NodeEditorPanel.currentPanel._update();
+        if (NodeCanvasPanel.currentPanel) {
+            NodeCanvasPanel.currentPanel._panel.reveal(column);
+            if (document) {
+                NodeCanvasPanel.currentPanel._document = document;
+            }
+            NodeCanvasPanel.currentPanel._update();
             return;
         }
 
         const panel = vscode.window.createWebviewPanel(
-            NodeEditorPanel.viewType,
-            'Node Editor',
+            NodeCanvasPanel.viewType,
+            'Node Canvas',
             column || vscode.ViewColumn.Two,
             {
                 enableScripts: true,
@@ -36,17 +38,15 @@ export class NodeEditorPanel {
             }
         );
 
-        NodeEditorPanel.currentPanel = new NodeEditorPanel(panel, extensionUri, document);
+        NodeCanvasPanel.currentPanel = new NodeCanvasPanel(panel, extensionUri, document);
     }
 
     public static revive(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
         const activeEditor = vscode.window.activeTextEditor;
-        if (activeEditor) {
-            NodeEditorPanel.currentPanel = new NodeEditorPanel(panel, extensionUri, activeEditor.document);
-        }
+        NodeCanvasPanel.currentPanel = new NodeCanvasPanel(panel, extensionUri, activeEditor?.document);
     }
 
-    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, document: vscode.TextDocument) {
+    private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri, document?: vscode.TextDocument) {
         this._panel = panel;
         this._extensionUri = extensionUri;
         this._document = document;
@@ -58,11 +58,16 @@ export class NodeEditorPanel {
         this._panel.webview.onDidReceiveMessage(
             message => {
                 switch (message.command) {
-                    case 'updateScript':
-                        this._updateDocument(message.script);
+                    case 'saveCanvas':
+                        this._saveCanvas(message.data);
                         return;
-                    case 'getScript':
-                        this._sendScriptToWebview();
+                    case 'loadCanvas':
+                        this._loadCanvas();
+                        return;
+                    case 'updateScript':
+                        if (this._document) {
+                            this._updateDocument(message.script);
+                        }
                         return;
                     case 'alert':
                         vscode.window.showErrorMessage(message.text);
@@ -75,7 +80,7 @@ export class NodeEditorPanel {
 
         vscode.workspace.onDidChangeTextDocument(
             e => {
-                if (e.document.uri.toString() === this._document.uri.toString()) {
+                if (this._document && e.document.uri.toString() === this._document.uri.toString()) {
                     this._sendScriptToWebview();
                 }
             },
@@ -85,7 +90,7 @@ export class NodeEditorPanel {
     }
 
     public dispose() {
-        NodeEditorPanel.currentPanel = undefined;
+        NodeCanvasPanel.currentPanel = undefined;
 
         this._panel.dispose();
 
@@ -99,12 +104,16 @@ export class NodeEditorPanel {
 
     private _update() {
         const webview = this._panel.webview;
-        this._panel.title = `Node Editor: ${path.basename(this._document.fileName)}`;
+        this._panel.title = this._document 
+            ? `Node Canvas: ${path.basename(this._document.fileName)}`
+            : 'Node Canvas';
         this._panel.webview.html = this._getHtmlForWebview(webview);
         this._sendScriptToWebview();
     }
 
     private _sendScriptToWebview() {
+        if (!this._document) return;
+        
         const script = this._document.getText();
         this._panel.webview.postMessage({
             command: 'setScript',
@@ -113,6 +122,8 @@ export class NodeEditorPanel {
     }
 
     private async _updateDocument(newScript: string) {
+        if (!this._document) return;
+        
         const edit = new vscode.WorkspaceEdit();
         const fullRange = new vscode.Range(
             this._document.positionAt(0),
@@ -120,6 +131,16 @@ export class NodeEditorPanel {
         );
         edit.replace(this._document.uri, fullRange, newScript);
         await vscode.workspace.applyEdit(edit);
+    }
+
+    private async _saveCanvas(canvasData: any) {
+        // TODO: Canvas Phase 5でキャンバスプロジェクト保存機能を実装
+        vscode.window.showInformationMessage('キャンバスデータを保存しました（将来実装）');
+    }
+
+    private async _loadCanvas() {
+        // TODO: Canvas Phase 5でキャンバスプロジェクト読み込み機能を実装
+        vscode.window.showInformationMessage('キャンバスデータを読み込みました（将来実装）');
     }
 
     private _getHtmlForWebview(webview: vscode.Webview) {
@@ -133,7 +154,7 @@ export class NodeEditorPanel {
                 <meta charset="UTF-8">
                 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}' 'unsafe-eval'; img-src ${webview.cspSource} data:; font-src ${webview.cspSource};">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Node Editor</title>
+                <title>Node Canvas</title>
             </head>
             <body class="vscode-dark">
                 <div id="root"></div>
